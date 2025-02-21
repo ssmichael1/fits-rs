@@ -1,0 +1,22 @@
+[package]
+name = "fits"
+version = "0.1.0"
+readme = "README.md"
+description = "FITS file parser"
+edition = "2021"
+
+[lib]
+name = "fits"
+
+[dependencies]
+bytemuck = { version = "1.21.0", features = ["derive"] }
+thiserror = "2.0.11"
+nalgebra = "0.33.2"
+
+[build-dependencies]
+
+[features]
+
+[profile.test]
+opt-level = 3
+inherits = "release"
