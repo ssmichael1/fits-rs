@@ -133,6 +133,10 @@ impl std::fmt::Display for HDU {
         for keyword in self.header.iter() {
             writeln!(f, "  {}", keyword)?;
         }
+        if let HDUData::Table(t) = &self.data {
+            writeln!(f, "  Table: {:?}", t)?;
+        }
+
         Ok(())
     }
 }

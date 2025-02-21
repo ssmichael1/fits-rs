@@ -184,7 +184,7 @@ mod tests {
         let fits = FITS::from_file("samp/FGSf64y0106m_a1f.fits");
         match fits {
             Ok(fits) => {
-                println!("{}", fits[0]);
+                println!("{}", fits[1]);
             }
             Err(e) => {
                 println!("Error: {}", e);
