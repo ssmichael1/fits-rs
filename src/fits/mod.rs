@@ -200,7 +200,7 @@ mod tests {
             Ok(fits) => {
                 if let crate::HDUData::Image(im) = &fits[0].data {
                     println!("wcs = {:?}", im.wcs);
-                    //println!("fits = {}", fits[0]);
+                    println!("fits = {}", fits[1]);
                 }
             }
             Err(e) => {

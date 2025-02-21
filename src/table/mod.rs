@@ -7,6 +7,24 @@ use crate::KeywordValue;
 pub struct Table {
     pub nfields: usize,
     pub tcol: Vec<usize>,
+    pub fieldnames: Vec<String>,
+    pub scale: Vec<Option<f64>>,
+    pub zero: Vec<Option<f64>>,
+}
+
+enum TValue {
+    Char(String),
+    Int(i64),
+    Float(f64),
+}
+
+enum TDisp {
+    Char(usize),
+    Int(usize, usize),
+    Bin(usize, usize),
+    Oct(usize, usize),
+    Hex(usize, usize),
+    Float(usize, usize),
 }
 
 impl Table {
@@ -162,6 +180,8 @@ impl Table {
             }
         };
 
+        let mut tdisp = Vec::<TDisp>::with_capacity(table.nfields);
+
         table.tcol = Vec::with_capacity(table.nfields);
         for i in 0..table.nfields {
             let kw = header
@@ -169,14 +189,66 @@ impl Table {
                 .ok_or(HeaderError::GenericError(
                     "Missing TBCOL keyword".to_string(),
                 ))?;
-            match kw.value {
-                KeywordValue::Int(value) => table.tcol.push(value as usize),
-                _ => {
-                    return Err(HeaderError::GenericError("Invalid TBCOL value".to_string()));
+            if let KeywordValue::Int(val) = kw.value {
+                table.tcol.push(val as usize);
+            } else {
+                return Err(HeaderError::GenericError("Invalid TBCOL value".to_string()));
+            }
+
+            let kw = header
+                .find(&format!("TTYPE{}", i + 1))
+                .ok_or(HeaderError::GenericError(
+                    "Missing TTYPE keyword".to_string(),
+                ))?;
+            if let KeywordValue::String(value) = &kw.value {
+                table.fieldnames.push(value.clone());
+            } else {
+                return Err(HeaderError::GenericError("Invalid TTYPE value".to_string()));
+            }
+
+            if let Some(kw) = header.find(&format!("TSCAL{}", i + 1)) {
+                if let KeywordValue::Float(value) = &kw.value {
+                    table.scale.push(Some(*value));
+                } else {
+                    return Err(HeaderError::GenericError("Invalid TSCAL value".to_string()));
+                }
+            } else {
+                table.scale.push(None);
+            }
+
+            if let Some(kw) = header.find(&format!("TZERO{}", i + 1)) {
+                if let KeywordValue::Float(value) = &kw.value {
+                    table.zero.push(Some(*value));
+                } else {
+                    return Err(HeaderError::GenericError("Invalid TZERO value".to_string()));
+                }
+            } else {
+                table.zero.push(None);
+            }
+
+            if let Some(kw) = header.find(&format!("TDISP{}", i + 1)) {
+                if let KeywordValue::String(value) = &kw.value {
+                    let mut iter = value.split(|c| c == '.');
+                    let width = iter.next().unwrap().parse::<usize>().unwrap();
+                    let disp = iter.next().unwrap();
+                    tdisp.push(match disp {
+                        "A" => TDisp::Char(width),
+                        "I" => TDisp::Int(width, 10),
+                        "B" => TDisp::Bin(width, 2),
+                        "O" => TDisp::Oct(width, 8),
+                        "Z" => TDisp::Hex(width, 16),
+                        "F" => TDisp::Float(width, 10),
+                        _ => {
+                            return Err(HeaderError::GenericError(
+                                "Invalid TDISP value".to_string(),
+                            ));
+                        }
+                    });
+                } else {
+                    return Err(HeaderError::GenericError("Invalid TDISP value".to_string()));
                 }
             }
         }
-
         Ok((HDUData::Table(table), nrows * nrowchars))
     }
 }
