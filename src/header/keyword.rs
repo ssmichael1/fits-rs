@@ -1,5 +1,10 @@
 use crate::HeaderError;
 
+/// Types of values in a FITS Keyword
+///
+/// Possible types are described in Chapter 4.2 of the
+/// FITS Standard
+///
 #[derive(Clone, Debug, PartialEq)]
 pub enum KeywordValue {
     None,
@@ -27,6 +32,15 @@ impl std::fmt::Display for KeywordValue {
     }
 }
 
+/// A FITS Keyword
+///
+/// A FITS keyword is a record in the header of a FITS file
+///
+/// A keyword consists of a name, an optional value, and
+/// an optional comment
+///
+/// Keywords are described in Chapter 4 of the FITS Standard
+///
 #[derive(Clone, Debug)]
 pub struct Keyword {
     pub name: String,
@@ -55,7 +69,19 @@ impl Default for Keyword {
 }
 
 impl Keyword {
-    pub fn new(kwstr: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
+    /// Create a new Keyword from a byte array
+    ///
+    /// The byte array is expected to be 80 bytes long
+    ///
+    /// # Arguments
+    ///
+    /// * `kwstr` - A byte array containing the keyword
+    ///
+    /// # Returns
+    ///
+    /// A new Keyword if successful, otherwise an error
+    ///
+    pub(crate) fn from_bytes(kwstr: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         if kwstr.len() != 80 {
             return Err(Box::new(HeaderError::BadKeywordLength(kwstr.len())));
         }

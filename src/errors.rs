@@ -1,3 +1,4 @@
+use crate::KeywordValue;
 use thiserror::Error;
 
 #[derive(Clone, Error, Debug)]
@@ -20,4 +21,6 @@ pub enum HeaderError {
     UnsupportedExtension(String),
     #[error("Unexpected Value Type in Keyword {0}")]
     UnexpectedValueType(String),
+    #[error("Unexpected Keyword Value: {0} = {1}")]
+    UnexpectedKeywordValue(String, KeywordValue),
 }

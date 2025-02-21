@@ -5,7 +5,13 @@ pub enum HDUData {
     Image(Box<crate::Image>),
 }
 
-/// Bit Pix Types
+/// "BITPIX" is a keyword in a a FITS header that describes
+/// the storage of raw pixels in the data section of the HDU
+///
+/// See Section 4.4.1 of the FITS Standard for more information
+///
+/// - [FITS Standard](https://fits.gsfc.nasa.gov/standard40/fits_standard40aa-le.pdf)
+///
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Bitpix {
     Int8,

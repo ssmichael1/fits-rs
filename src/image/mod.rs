@@ -7,18 +7,22 @@ use crate::WCS;
 
 /// Represent image data as described in a FITS file
 ///
-/// # This include2:
+/// # This includes:
 /// * Raw pixel data in image
 /// * Axes definitions
-/// * World Coordinate System transform information
+/// * World Coordinate System transform(s) information
 ///
-/// Derived from Version 4 of FITS standard
+/// # Note
+///
+/// * Derived from Version 4 of FITS standard
 #[derive(Clone, Debug)]
 pub struct Image {
     pub pixeltype: Bitpix,
     pub axes: Vec<usize>,
     pub rawbytes: Vec<u8>,
     pub wcs: Option<WCS>,
+    pub gcount: usize,
+    pub pcount: usize,
 }
 
 impl Image {
@@ -100,8 +104,8 @@ impl Image {
             };
             axes.push(axis);
         }
-        let _pcount;
-        let _gcount;
+        let mut pcount = 0;
+        let mut gcount = 1;
         if KeywordValue::String("IMAGE".to_string()) == header[0].value {
             // loog for PCOUNT and GCOUNT keywords
 
@@ -116,7 +120,7 @@ impl Image {
                 )));
             }
             match &kwpcount.value {
-                KeywordValue::Int(value) => _pcount = *value as usize,
+                KeywordValue::Int(value) => pcount = *value as usize,
                 _ => {
                     return Err(Box::new(HeaderError::GenericError(
                         "Invalid PCOUNT value".to_string(),
@@ -133,7 +137,7 @@ impl Image {
                 )));
             }
             match &kwgcount.value {
-                KeywordValue::Int(value) => _gcount = *value as usize,
+                KeywordValue::Int(value) => gcount = *value as usize,
                 _ => {
                     return Err(Box::new(HeaderError::GenericError(
                         "Invalid GCOUNT value".to_string(),
@@ -205,6 +209,8 @@ impl Image {
                 axes,
                 rawbytes: imgrawbytes,
                 wcs: crate::WCS::from_header(header)?,
+                gcount,
+                pcount,
             }))
         }
 

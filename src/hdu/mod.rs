@@ -34,7 +34,17 @@ impl HDU {
         self.header.iter().find(|x| x.name == key).map(|x| &x.value)
     }
 
-    pub fn from_bytes(rawbytes: &[u8]) -> Result<(Self, usize), Box<dyn std::error::Error>> {
+    /// Read a HDU from a byte array
+    ///
+    /// # Arguments
+    ///
+    /// * `rawbytes` - The byte array containing the HDU
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the HDU and the number of bytes read, or an error
+    ///
+    pub(crate) fn from_bytes(rawbytes: &[u8]) -> Result<(Self, usize), Box<dyn std::error::Error>> {
         let mut record = HDU::default();
         let mut nheaders = 0;
 

@@ -14,7 +14,7 @@ impl FITSBlock {
             (0..36)
                 .map(|i| {
                     let record = &bytes[i * 80..(i + 1) * 80];
-                    Keyword::new(record)
+                    Keyword::from_bytes(record)
                 })
                 .collect::<Result<Vec<_>, _>>()?
                 .try_into()

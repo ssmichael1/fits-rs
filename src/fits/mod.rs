@@ -99,7 +99,16 @@ impl FITS {
         FITS { hdus: Vec::new() }
     }
 
-    /// indexing and return a result to ensure valid
+    /// Return the HDU at the given index
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the HDU to return
+    ///
+    /// # Returns
+    ///
+    /// A reference to the HDU if it exists, otherwise an error
+    ///
     pub fn at(&self, index: usize) -> Result<&HDU, Box<dyn std::error::Error>> {
         if index < self.hdus.len() {
             Ok(&self.hdus[index])
@@ -111,6 +120,16 @@ impl FITS {
         }
     }
 
+    /// Read a FITS file from disk
+    ///
+    /// # Arguments
+    ///
+    /// * `file` - The name of the file to read
+    ///
+    /// # Returns
+    ///
+    /// A FITS structure containing the contents of the file
+    ///
     pub fn from_file(file: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let mut fits = FITS::new();
 

@@ -9,7 +9,9 @@ pub use keyword::KeywordValue;
 /// FITS Header-Data Unit (HDU)
 ///
 /// The header consists of an array of keywords
+/// The array can be of arbitrary length
 ///
+/// # Note: this is a thin wrapper around a Vec<Keyword>
 ///
 #[derive(Clone, Debug, Default)]
 pub struct Header(pub Vec<Keyword>);
