@@ -2,6 +2,36 @@ use crate::HDU;
 
 use std::io::Read;
 
+/// FITS File Structure
+///
+/// # Description:
+///
+/// The NASA FITS file format is a standard format for astronomical data.  It is a
+/// binary format that consists of a series of Header and Data Units (HDUs).  Each
+/// HDU consists of a header and data section.  The header is a series of 80 byte
+/// records that contain keyword/value pairs.  The data section contains the actual
+/// data.  The data can be in a variety of formats including images, tables, and
+/// binary tables.
+///
+/// This module provides a structure for reading and writing FITS files, and inerpreting
+/// the contained binary data.
+///
+/// # Example:
+///
+/// ```rust
+/// use fits::FITS;
+/// let fits = FITS::from_file("samp/WFPC2u5780205r_c0fx.fits");
+/// match fits {
+///    Ok(fits) => {
+///       println!("{}", fits);
+///   }
+///  Err(e) => {
+///     println!("Error: {}", e);
+///    panic!("Error reading FITS file");
+/// }
+/// ```
+///
+///
 #[derive(Clone, Debug)]
 pub struct FITS {
     hdus: Vec<HDU>,
