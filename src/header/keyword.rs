@@ -65,10 +65,6 @@ impl Keyword {
         for c in kwname {
             let c = *c as char;
             if !c.is_ascii_uppercase() && c != ' ' && !c.is_ascii_digit() && c != '_' && c != '-' {
-                println!("here? {}", c as u8);
-                for i in kwname {
-                    println!("{}", i);
-                }
                 return Err(Box::new(HeaderError::InvalidCharacterInKeyword(
                     String::from_utf8(kwname.to_vec())?,
                 )));

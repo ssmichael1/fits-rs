@@ -1,8 +1,6 @@
 mod fitsblock;
 mod keyword;
 
-pub type KeywordRecord = [u8; 80];
-
 pub use fitsblock::FITSBlock;
 pub use keyword::Keyword;
 pub use keyword::KeywordValue;

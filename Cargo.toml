@@ -1,9 +1,14 @@
 [package]
 name = "fits"
 version = "0.0.1"
-readme = "README.md"
-description = "FITS file parser"
 edition = "2021"
+readme = "README.md"
+license-file = "LICENSE"
+homepage = "https://github.com/ssmichael1/fits-rs"
+repository = "https://github.com/ssmichael1/fits-rs"
+documentation = "https://docs.rs/satkit"
+keywords = ["NASA", "astronomy", "FITS", "image"]
+categories = ["aerospace", "algorithms", "mathematics", "science"]
 
 [lib]
 name = "fits"

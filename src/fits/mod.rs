@@ -16,22 +16,64 @@ use std::io::Read;
 /// This module provides a structure for reading and writing FITS files, and inerpreting
 /// the contained binary data.
 ///
-/// # Example:
 ///
-/// ```rust
-/// use fits::FITS;
+/// # References:
+/// - [FITS File Format](https://fits.gsfc.nasa.gov/fits_primer.html)
+/// - [FITS Standard](https://fits.gsfc.nasa.gov/standard40/fits_standard40aa-le.pdf)
+/// - [FITS Header Keywords](https://fits.gsfc.nasa.gov/fits_dictionary.html)
+///
+///
+/// # Examples:
+///
+/// * The following example reads a FITS file and prints the contents of the file:
+/// ```
+/// use fits_rs::FITS;
 /// let fits = FITS::from_file("samp/WFPC2u5780205r_c0fx.fits");
-/// match fits {
-///    Ok(fits) => {
-///       println!("{}", fits);
-///   }
-///  Err(e) => {
-///     println!("Error: {}", e);
-///    panic!("Error reading FITS file");
+///     match fits {
+///         Ok(fits) => {
+///         println!("{}", fits);
+///     }
+///     Err(e) => {
+///         println!("Error: {}", e);
+///         panic!("Error reading FITS file");
+///     }
 /// }
 /// ```
 ///
+/// * The following example reads a FITS file and prints the contents of the first HDU:
+/// ```
+/// use fits_rs::FITS;
+/// let fits = FITS::from_file("samp/WFPC2u5780205r_c0fx.fits");
+///     match fits {
+///         Ok(fits) => {
+///         println!("{}", fits[0]);
+///     }
+///     Err(e) => {
+///         println!("Error: {}", e);
+///         panic!("Error reading FITS file");
+///     }
+/// }
+/// ```
 ///
+/// * The following example accesses an image in the first (primary) HDU
+/// * and some of the associated image fields
+///
+/// ```
+/// use fits_rs::FITS;
+/// let fits = FITS::from_file("samp/WFPC2u5780205r_c0fx.fits");
+///     match fits {
+///         Ok(fits) => {
+///         let HDUData::Image(im) = &fits[0].data;
+///         println!("Image shape: {:?}", im.axes);
+///         println!("Image pixel type: {:?}", im.bitpix);
+///         println!("Image WCS: {:?}", im.wcs);
+///     }
+///     Err(e) => {
+///         println!("Error: {}", e);
+///         panic!("Error reading FITS file");
+///     }
+/// }
+/// ```
 #[derive(Clone, Debug)]
 pub struct FITS {
     hdus: Vec<HDU>,
