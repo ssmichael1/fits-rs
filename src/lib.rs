@@ -83,6 +83,7 @@ mod hdu;
 mod header;
 mod image;
 mod table;
+mod tdisp;
 mod types;
 mod wcs;
 
@@ -96,6 +97,7 @@ pub use header::Keyword;
 pub use header::KeywordValue;
 pub use image::Image;
 pub use table::Table;
+pub use tdisp::TDisp;
 pub use types::*;
 pub use wcs::WCS;
 

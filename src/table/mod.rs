@@ -3,6 +3,7 @@ use crate::Header;
 use crate::HeaderError;
 use crate::Keyword;
 use crate::KeywordValue;
+use crate::TDisp;
 
 use std::error::Error;
 
@@ -31,20 +32,23 @@ enum TForm {
 #[derive(Debug, Clone, Default)]
 pub struct Table {
     pub nfields: usize,
-    pub tcol: Vec<usize>,
     pub fieldnames: Vec<String>,
+    /// Scale converting from table data to physical units
     pub scale: Vec<Option<f64>>,
+    /// Offset converting from table to physical units
     pub zero: Vec<Option<f64>>,
+    /// Minimum value of field with valid interpretation
+    pub tlmin: Vec<Option<f64>>,
+    /// Maximum value of field with valid interpretation
+    pub tlmax: Vec<Option<f64>>,
+    /// Minimum value of field in column
+    pub tdmin: Vec<Option<f64>>,
+    /// Maximum value of field in column
+    pub tdmax: Vec<Option<f64>>,
+    /// The table data
     pub data: Vec<Vec<TValue>>,
-}
-
-enum TDisp {
-    Char(usize),
-    Int(usize, usize),
-    Bin(usize, usize),
-    Oct(usize, usize),
-    Hex(usize, usize),
-    Float(usize, usize),
+    /// The table units
+    pub units: Vec<Option<String>>,
 }
 
 impl Table {
@@ -66,19 +70,19 @@ impl Table {
                     Ok(TForm::Int(width))
                 }
                 'F' => {
-                    let mut iter = value[1..].split(|c| c == '.');
+                    let mut iter = value[1..].split('.');
                     let width = iter.next().unwrap().parse::<usize>()?;
                     let dec = iter.next().unwrap().parse::<usize>()?;
                     Ok(TForm::FloatDec(width, dec))
                 }
                 'E' => {
-                    let mut iter = value[1..].split(|c| c == '.');
+                    let mut iter = value[1..].split('.');
                     let width = iter.next().unwrap().parse::<usize>()?;
                     let dec = iter.next().unwrap().parse::<usize>()?;
                     Ok(TForm::FloatE(width, dec))
                 }
                 'D' => {
-                    let mut iter = value[1..].split(|c| c == '.');
+                    let mut iter = value[1..].split('.');
                     let width = iter.next().unwrap().parse::<usize>()?;
                     let dec = iter.next().unwrap().parse::<usize>()?;
                     Ok(TForm::FloatD(width, dec))
@@ -260,7 +264,13 @@ impl Table {
         let mut tform = Vec::<TForm>::with_capacity(table.nfields);
         let mut tnull = Vec::<Option<String>>::with_capacity(table.nfields);
 
-        table.tcol = Vec::with_capacity(table.nfields);
+        let mut tcol = Vec::with_capacity(table.nfields);
+        table.tdmin = Vec::with_capacity(table.nfields);
+        table.tdmax = Vec::with_capacity(table.nfields);
+        table.tlmin = Vec::with_capacity(table.nfields);
+        table.tlmax = Vec::with_capacity(table.nfields);
+        table.units = Vec::with_capacity(table.nfields);
+
         for i in 0..table.nfields {
             let kw = header
                 .find(&format!("TBCOL{}", i + 1))
@@ -268,7 +278,7 @@ impl Table {
                     "Missing TBCOL keyword".to_string(),
                 ))?;
             if let KeywordValue::Int(val) = kw.value {
-                table.tcol.push(val as usize);
+                tcol.push(val as usize);
             } else {
                 return Err(Box::new(HeaderError::GenericError(
                     "Invalid TBCOL value".to_string(),
@@ -309,6 +319,12 @@ impl Table {
                 ))?;
             tform.push(Table::tform_from_keyword(kw)?);
 
+            if let Some(kw) = header.find(&format!("TDISP{}", i + 1)) {
+                tdisp.push(TDisp::from_keyword(kw)?);
+            } else {
+                tdisp.push(TDisp::None);
+            }
+
             if let Some(kw) = header.find(&format!("TSCAL{}", i + 1)) {
                 if let KeywordValue::Float(value) = &kw.value {
                     table.scale.push(Some(*value));
@@ -331,6 +347,71 @@ impl Table {
                 }
             } else {
                 table.zero.push(None);
+            }
+
+            // Get the units
+            if let Some(kw) = header.find(&format!("TUNIT{}", i + 1)) {
+                if let KeywordValue::String(value) = &kw.value {
+                    table.units.push(Some(value.clone()));
+                } else {
+                    return Err(Box::new(HeaderError::GenericError(
+                        "Invalid TUNIT value".to_string(),
+                    )));
+                }
+            } else {
+                table.units.push(None);
+            }
+
+            // Get the minimum physical value in table at this column
+            if let Some(kw) = header.find(&format!("TDMIN{}", i + 1)) {
+                if let KeywordValue::Float(value) = &kw.value {
+                    table.tdmin.push(Some(*value));
+                } else {
+                    return Err(Box::new(HeaderError::GenericError(
+                        "Invalid TDMIN value".to_string(),
+                    )));
+                }
+            } else {
+                table.tdmin.push(None);
+            }
+
+            // Get the maximum physical value in table at this column
+            if let Some(kw) = header.find(&format!("TDMAX{}", i + 1)) {
+                if let KeywordValue::Float(value) = &kw.value {
+                    table.tdmax.push(Some(*value));
+                } else {
+                    return Err(Box::new(HeaderError::GenericError(
+                        "Invalid TDMAX value".to_string(),
+                    )));
+                }
+            } else {
+                table.tdmax.push(None);
+            }
+
+            // Get minimum value of field with valid interpretation
+            if let Some(kw) = header.find(&format!("TLMIN{}", i + 1)) {
+                if let KeywordValue::Float(value) = &kw.value {
+                    table.tlmin.push(Some(*value));
+                } else {
+                    return Err(Box::new(HeaderError::GenericError(
+                        "Invalid TLMIN value".to_string(),
+                    )));
+                }
+            } else {
+                table.tlmin.push(None);
+            }
+
+            //  Get maximum value of field with valid interpretation
+            if let Some(kw) = header.find(&format!("TLMAX{}", i + 1)) {
+                if let KeywordValue::Float(value) = &kw.value {
+                    table.tlmax.push(Some(*value));
+                } else {
+                    return Err(Box::new(HeaderError::GenericError(
+                        "Invalid TLMAX value".to_string(),
+                    )));
+                }
+            } else {
+                table.tlmax.push(None);
             }
 
             if let Some(kw) = header.find(&format!("TDISP{}", i + 1)) {
@@ -378,8 +459,8 @@ impl Table {
             let mut row = Vec::with_capacity(table.nfields);
             let rowbytes = &rawbytes[i * nrowchars..(i + 1) * nrowchars];
             for j in 0..table.nfields {
-                let offset = table.tcol[j] - 1;
-                let mut width = 0;
+                let offset = tcol[j] - 1;
+                let width;
 
                 // Check for null value
                 if let Some(nullstr) = &tnull[j] {
