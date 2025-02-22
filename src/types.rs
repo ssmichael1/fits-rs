@@ -3,6 +3,15 @@ pub enum HDUData {
     None,
     Table(Box<crate::Table>),
     Image(Box<crate::Image>),
+    BinTable(Box<crate::BinTable>),
+}
+
+#[derive(Debug, Clone)]
+pub enum TValue {
+    String(String),
+    Int(i64),
+    Float(f64),
+    Null,
 }
 
 /// "BITPIX" is a keyword in a a FITS header that describes
@@ -23,6 +32,8 @@ pub enum Bitpix {
 }
 
 impl Bitpix {
+    /// Get from raw integer values
+    /// See Table 8 of the FITS Standard for more information
     pub fn from_i64(value: i64) -> Result<Self, Box<dyn std::error::Error>> {
         match value {
             8 => Ok(Bitpix::Int8),
@@ -38,6 +49,8 @@ impl Bitpix {
         }
     }
 
+    /// Convert to raw integer values
+    /// See Table 8 of the FITS Standard for more information
     pub fn to_i64(&self) -> i64 {
         match self {
             Bitpix::Int8 => 8,
@@ -49,6 +62,7 @@ impl Bitpix {
         }
     }
 
+    /// Get the size of the data type in bytes
     pub fn size(&self) -> usize {
         match self {
             Bitpix::Int8 => 1,

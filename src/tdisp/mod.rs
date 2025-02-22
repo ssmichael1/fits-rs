@@ -4,9 +4,11 @@ use crate::KeywordValue;
 
 use std::error::Error;
 
+#[derive(Clone, Debug)]
 pub enum TDisp {
     None,
     Char(usize),
+    Logical(usize),
     Int(usize, usize),
     Bin(usize, usize),
     Oct(usize, usize),
@@ -64,6 +66,9 @@ impl TDisp {
             let fstr = value.chars().skip(1).collect::<String>();
             match disp {
                 'A' => Ok(TDisp::Char(fstr.parse().map_err(|_| {
+                    Box::new(HeaderError::GenericError("Invalid TDISP value".to_string()))
+                })?)),
+                'L' => Ok(TDisp::Logical(fstr.parse().map_err(|_| {
                     Box::new(HeaderError::GenericError("Invalid TDISP value".to_string()))
                 })?)),
                 'I' => {

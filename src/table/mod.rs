@@ -4,16 +4,9 @@ use crate::HeaderError;
 use crate::Keyword;
 use crate::KeywordValue;
 use crate::TDisp;
+use crate::TValue;
 
 use std::error::Error;
-
-#[derive(Debug, Clone)]
-pub enum TValue {
-    String(String),
-    Int(i64),
-    Float(f64),
-    Null,
-}
 
 enum TForm {
     Char(usize),
@@ -111,7 +104,7 @@ impl Table {
         // Check bitpix is 8
         let kwbitpix = header
             .get(1)
-            .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
+            .ok_or(HeaderError::MissingKeyword("BITPIX".to_string()))?;
         if kwbitpix.name != "BITPIX" {
             return Err(Box::new(HeaderError::InvalidKeywordPlacement(
                 kwbitpix.name.clone(),
@@ -413,37 +406,6 @@ impl Table {
             } else {
                 table.tlmax.push(None);
             }
-
-            if let Some(kw) = header.find(&format!("TDISP{}", i + 1)) {
-                if let KeywordValue::String(value) = &kw.value {
-                    let disp = value
-                        .chars()
-                        .next()
-                        .ok_or(HeaderError::GenericError("Invalid TDISP value".to_string()))?;
-
-                    let width: usize = 3;
-                    tdisp.push(match disp {
-                        'A' => TDisp::Char(width),
-                        'I' => TDisp::Int(width, 10),
-                        'B' => TDisp::Bin(width, 2),
-                        'O' => TDisp::Oct(width, 8),
-                        'Z' => TDisp::Hex(width, 16),
-                        'F' => TDisp::Float(width, 10),
-                        'E' => TDisp::Float(width, 10),
-                        'D' => TDisp::Float(width, 10),
-                        'G' => TDisp::Float(width, 10),
-                        _ => {
-                            return Err(Box::new(HeaderError::GenericError(
-                                "Invalid TDISP value".to_string(),
-                            )));
-                        }
-                    });
-                } else {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid TDISP value".to_string(),
-                    )));
-                }
-            }
         }
 
         // Make sure data is long enough
@@ -538,7 +500,6 @@ impl Table {
                         } else {
                             row.push(TValue::Float(s.parse::<f64>()?));
                         }
-                        println!("to here");
                     }
                 }
             } // end of iterating over row

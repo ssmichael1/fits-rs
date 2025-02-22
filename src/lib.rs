@@ -77,6 +77,7 @@
 //! ```
 //!
 
+mod bintable;
 mod errors;
 mod fits;
 mod hdu;
@@ -89,6 +90,7 @@ mod wcs;
 
 pub(crate) use header::FITSBlock;
 
+pub use bintable::BinTable;
 pub use errors::HeaderError;
 pub use fits::*;
 pub use hdu::HDU;

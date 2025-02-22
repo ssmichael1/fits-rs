@@ -23,4 +23,6 @@ pub enum HeaderError {
     UnexpectedValueType(String),
     #[error("Unexpected Keyword Value: {0} = {1}")]
     UnexpectedKeywordValue(String, KeywordValue),
+    #[error("Missing Keyword: {0}")]
+    MissingKeyword(String),
 }

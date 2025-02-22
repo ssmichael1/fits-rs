@@ -1,11 +1,11 @@
 use crate::types::HDUData;
+use crate::BinTable;
 use crate::FITSBlock;
 use crate::Header;
 use crate::HeaderError;
 use crate::Image;
 use crate::KeywordValue;
 use crate::Table;
-
 // Header and Data Unit
 //
 // This is comprosed of a header and optionally data (image or table)
@@ -95,12 +95,20 @@ impl HDU {
                             "TABLE" => {
                                 // This is a table extension
                                 // read in the table
-                                // read in an image
-                                let (image, nbytes) =
+                                let (table, nbytes) =
                                     Table::from_bytes(&record.header, &rawbytes[offset..])?;
-                                record.data = image;
+                                record.data = table;
                                 offset += nbytes;
                             }
+                            "BINTABLE" => {
+                                // This is a binary table extension
+                                // read in the table
+                                let (bintable, nbytes) =
+                                    BinTable::from_bytes(&record.header, &rawbytes[offset..])?;
+                                record.data = bintable;
+                                offset += nbytes;
+                            }
+
                             _ => {
                                 // Unsupported extension ; report error
                                 return Err(Box::new(HeaderError::UnsupportedExtension(

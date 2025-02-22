@@ -143,7 +143,6 @@ impl FITS {
         // Header and Data units.  Read them in sequentially
         let mut offset = 0;
         while offset < rawbytes.len() {
-            println!("offset: {}", offset);
             let (hdu, nbytes) = HDU::from_bytes(&rawbytes[offset..])?;
             fits.hdus.push(hdu);
             offset += nbytes;
@@ -169,9 +168,7 @@ mod tests {
     fn test_fits_from_file1() {
         let fits = FITS::from_file("samp/WFPC2u5780205r_c0fx.fits");
         match fits {
-            Ok(fits) => {
-                println!("{}", fits);
-            }
+            Ok(_fits) => {}
             Err(e) => {
                 println!("Error: {}", e);
                 panic!("Error reading FITS file");
