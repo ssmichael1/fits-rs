@@ -6,6 +6,8 @@ use crate::KeywordValue;
 use crate::TDisp;
 use crate::TValue;
 
+use crate::utils::*;
+
 use std::error::Error;
 
 enum TForm {
@@ -100,158 +102,21 @@ impl Table {
         // but it is the standard
 
         let mut table = Box::new(Table::default());
-
-        // Check bitpix is 8
-        let kwbitpix = header
-            .get(1)
-            .ok_or(HeaderError::MissingKeyword("BITPIX".to_string()))?;
-        if kwbitpix.name != "BITPIX" {
-            return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                kwbitpix.name.clone(),
-                1,
-            )));
-        }
-        match &kwbitpix.value {
-            KeywordValue::Int(value) => {
-                if *value != 8 {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid BITPIX value".to_string(),
-                    )));
-                }
-            }
-            _ => {
-                return Err(Box::new(HeaderError::GenericError(
-                    "Invalid BITPIX value".to_string(),
-                )))
-            }
-        }
-
-        // Check naxis is 2
-        let kwaxes = header
-            .get(2)
-            .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
-        if kwaxes.name != "NAXIS" {
-            return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                kwaxes.name.clone(),
-                2,
-            )));
-        }
-        match &kwaxes.value {
-            KeywordValue::Int(value) => {
-                if *value != 2 {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid NAXIS value".to_string(),
-                    )));
-                }
-            }
-            _ => {
-                return Err(Box::new(HeaderError::GenericError(
-                    "Invalid NAXIS value".to_string(),
-                )));
-            }
-        }
-
-        // get naxis1 and naxis2
-        let kwaxis1 = header
-            .get(3)
-            .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
-        if kwaxis1.name != "NAXIS1" {
-            return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                kwaxis1.name.clone(),
-                3,
-            )));
-        }
-        let nrowchars = match &kwaxis1.value {
-            KeywordValue::Int(value) => *value as usize,
-            _ => {
-                return Err(Box::new(HeaderError::GenericError(
-                    "Invalid NROWCHARS (NAXIS1) value".to_string(),
-                )));
-            }
-        };
-        let kwaxis2 = header
-            .get(4)
-            .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
-        if kwaxis2.name != "NAXIS2" {
-            return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                kwaxis2.name.clone(),
-                4,
-            )));
-        }
-        let nrows = match &kwaxis2.value {
-            KeywordValue::Int(value) => *value as usize,
-            _ => {
-                return Err(Box::new(HeaderError::GenericError(
-                    "Invalid NROWS (NAXIS2) value".to_string(),
-                )));
-            }
-        };
-
-        // pcount is next ... should be 0
-        let kwpcount = header
-            .get(5)
-            .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
-        if kwpcount.name != "PCOUNT" {
-            return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                kwpcount.name.clone(),
-                5,
-            )));
-        }
-        if let KeywordValue::Int(value) = &kwpcount.value {
-            if *value != 0 {
-                return Err(Box::new(HeaderError::UnexpectedKeywordValue(
-                    "PCOUNT".to_string(),
-                    kwpcount.value.clone(),
-                )));
-            }
-        } else {
-            return Err(Box::new(HeaderError::UnexpectedKeywordValue(
-                "PCOUNT".to_string(),
-                kwpcount.value.clone(),
-            )));
-        }
-
-        // gcount is next ... should be 1
-        let kwgcount = header
-            .get(6)
-            .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
-        if kwgcount.name != "GCOUNT" {
-            return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                kwgcount.name.clone(),
-                6,
-            )));
-        }
-        if let KeywordValue::Int(value) = &kwgcount.value {
-            if *value != 1 {
-                return Err(Box::new(HeaderError::UnexpectedKeywordValue(
-                    "GCOUNT".to_string(),
-                    kwgcount.value.clone(),
-                )));
-            }
-        } else {
-            return Err(Box::new(HeaderError::UnexpectedKeywordValue(
-                "GCOUNT".to_string(),
-                kwgcount.value.clone(),
-            )));
-        }
-        // TFIELDS is next;
-        let kwtfields = header
-            .get(7)
-            .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
-        if kwtfields.name != "TFIELDS" {
-            return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                kwtfields.name.clone(),
-                7,
-            )));
-        }
-        table.nfields = match &kwtfields.value {
-            KeywordValue::Int(value) => *value as usize,
-            _ => {
-                return Err(Box::new(HeaderError::GenericError(
-                    "Invalid NFIELDS (TFIELDS) value".to_string(),
-                )));
-            }
-        };
+        // Go through required keywords, per the standard
+        // After XTENSION is BITPIX, which must be 8
+        check_int_keyword_at_index(header, 1, "BITPIX", 8)?;
+        // Next is NAXIS, which must be 2
+        check_int_keyword_at_index(header, 2, "NAXIS", 2)?;
+        // Next is NAXIS1
+        let nrowchars = get_keyword_int_at_index(header, 3, "NAXIS1")? as usize;
+        // Next is NAXIS2
+        let nrows = get_keyword_int_at_index(header, 4, "NAXIS2")? as usize;
+        // Next is PCOUNT, which is the size of the heap for table it is zero
+        check_int_keyword_at_index(header, 4, "PCOUNT", 0)?;
+        // Next is GCOUNT, must be 1
+        check_int_keyword_at_index(header, 6, "GCOUNT", 1)?;
+        // Next is TFIELDS
+        table.nfields = get_keyword_int_at_index(header, 7, "TFIELDS")? as usize;
 
         let mut tdisp = Vec::<TDisp>::with_capacity(table.nfields);
         let mut tform = Vec::<TForm>::with_capacity(table.nfields);
@@ -265,32 +130,20 @@ impl Table {
         table.units = Vec::with_capacity(table.nfields);
 
         for i in 0..table.nfields {
-            let kw = header
-                .find(&format!("TBCOL{}", i + 1))
-                .ok_or(HeaderError::GenericError(
-                    "Missing TBCOL keyword".to_string(),
-                ))?;
-            if let KeywordValue::Int(val) = kw.value {
-                tcol.push(val as usize);
-            } else {
-                return Err(Box::new(HeaderError::GenericError(
-                    "Invalid TBCOL value".to_string(),
-                )));
-            }
+            tcol.push(header.value_int(&format!("TBCOL{}", i + 1)).ok_or(
+                HeaderError::GenericError(
+                    "Missing or incorrect TBCOL keyword in table".to_string(),
+                ),
+            )?);
 
             // TType is name of field ; it is required if TFIELDS is not zero
-            let kw = header
-                .find(&format!("TTYPE{}", i + 1))
-                .ok_or(HeaderError::GenericError(
-                    "Missing TTYPE keyword".to_string(),
-                ))?;
-            if let KeywordValue::String(value) = &kw.value {
-                table.fieldnames.push(value.clone());
-            } else {
-                return Err(Box::new(HeaderError::GenericError(
-                    "Invalid TTYPE value".to_string(),
-                )));
-            }
+            table
+                .fieldnames
+                .push(header.value_string(&format!("TTYPE{}", i + 1)).ok_or(
+                    HeaderError::GenericError(
+                        "Missing or incorrect TTYPE keyword in table".to_string(),
+                    ),
+                )?);
 
             if let Some(kw) = header.find(&format!("TNULL{}", i + 1)) {
                 if let KeywordValue::String(value) = &kw.value {
