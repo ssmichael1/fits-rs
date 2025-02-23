@@ -2,10 +2,13 @@ use std::error::Error;
 
 use crate::HeaderError;
 
-#[derive(Clone, Debug, PartialEq)]
+use std::rc::Rc;
+
+#[derive(Clone, Debug, PartialEq, Default)]
 pub enum TFormType {
     Logical,
     Bit,
+    #[default]
     UnsignedByte,
     Int16,
     Int32,
@@ -15,20 +18,33 @@ pub enum TFormType {
     Float64,
     Complex32,
     Complex64,
-    ArrayD32(i64),
-    ArrayD64(i64),
-}
-
-impl Default for TFormType {
-    fn default() -> Self {
-        TFormType::UnsignedByte
-    }
+    ArrayD32(Rc<TFormType>, usize),
+    ArrayD64(Rc<TFormType>, usize),
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct TForm {
     pub dtype: TFormType,
     pub repeats: usize,
+}
+
+fn tform_type_from_char(c: char) -> Result<TFormType, Box<dyn Error>> {
+    match c {
+        'L' => Ok(TFormType::Logical),
+        'X' => Ok(TFormType::Bit),
+        'B' => Ok(TFormType::UnsignedByte),
+        'I' => Ok(TFormType::Int16),
+        'J' => Ok(TFormType::Int32),
+        'K' => Ok(TFormType::Int64),
+        'A' => Ok(TFormType::Char),
+        'E' => Ok(TFormType::Float32),
+        'D' => Ok(TFormType::Float64),
+        'C' => Ok(TFormType::Complex32),
+        'M' => Ok(TFormType::Complex64),
+        'P' => Ok(TFormType::ArrayD32(Rc::new(TFormType::default()), 0)),
+        'Q' => Ok(TFormType::ArrayD64(Rc::new(TFormType::default()), 0)),
+        _ => Err(Box::new(HeaderError::InvalidTForm(c.to_string()))),
+    }
 }
 
 impl TForm {
@@ -45,45 +61,47 @@ impl TForm {
         } else {
             1
         };
-        // Get character from remaining string
-        let mut dtype = match s.chars().nth(numstr.len()) {
-            Some('L') => TFormType::Logical,
-            Some('X') => TFormType::Bit,
-            Some('B') => TFormType::UnsignedByte,
-            Some('I') => TFormType::Int16,
-            Some('J') => TFormType::Int32,
-            Some('K') => TFormType::Int64,
-            Some('A') => TFormType::Char,
-            Some('E') => TFormType::Float32,
-            Some('D') => TFormType::Float64,
-            Some('C') => TFormType::Complex32,
-            Some('M') => TFormType::Complex64,
-            Some('P') => TFormType::ArrayD32(0),
-            Some('Q') => TFormType::ArrayD64(0),
-            _ => return Err(Box::new(HeaderError::InvalidTForm(s.to_string()))),
-        };
 
-        // D32 and D64 array must have repeats of 0 or 1
-        if (dtype == TFormType::ArrayD32(0) || dtype == TFormType::ArrayD64(0)) && repeats > 1 {
-            return Err(Box::new(HeaderError::InvalidTForm(s.to_string())));
-        }
-        let arrstr = s.chars().skip(numstr.len() + 1).collect::<String>();
-        if arrstr.starts_with('(') {
-            let arrstr = arrstr
+        let dtype = tform_type_from_char(
+            s.chars()
+                .nth(numstr.len())
+                .ok_or(HeaderError::InvalidTForm(s.to_string()))?,
+        )?;
+
+        if dtype == TFormType::ArrayD32(Rc::new(TFormType::default()), 0)
+            || dtype == TFormType::ArrayD64(Rc::new(TFormType::default()), 0)
+        {
+            let tchar = s
                 .chars()
-                .skip(1)
-                .take_while(|c| *c != ')')
-                .collect::<String>();
-            let n: i64 = arrstr.parse()?;
-            if dtype == TFormType::ArrayD32(0) {
-                dtype = TFormType::ArrayD32(n);
-            }
-            if dtype == TFormType::ArrayD64(0) {
-                dtype = TFormType::ArrayD64(n);
-            }
-        }
+                .nth(numstr.len())
+                .ok_or(HeaderError::InvalidTForm(s.to_string()))?;
+            let ttype = tform_type_from_char(tchar)?;
 
-        Ok(TForm { dtype, repeats })
+            let arrstr = s.chars().skip(numstr.len() + 1).collect::<String>();
+
+            let mut n: usize = 0;
+            if arrstr.starts_with('(') {
+                let arrstr = arrstr
+                    .chars()
+                    .skip(1)
+                    .take_while(|c| *c != ')')
+                    .collect::<String>();
+                n = arrstr.parse()?;
+            }
+            if dtype == TFormType::ArrayD32(Rc::new(TFormType::default()), 0) {
+                Ok(TForm {
+                    dtype: TFormType::ArrayD32(Rc::new(ttype), n),
+                    repeats,
+                })
+            } else {
+                Ok(TForm {
+                    dtype: TFormType::ArrayD64(Rc::new(ttype), n),
+                    repeats,
+                })
+            }
+        } else {
+            Ok(TForm { dtype, repeats })
+        }
     }
 
     pub fn bytes(&self) -> usize {
@@ -95,7 +113,7 @@ impl TForm {
             }
         }
 
-        (match self.dtype {
+        (match &self.dtype {
             TFormType::Logical => 1,
             TFormType::Bit => 1,
             TFormType::UnsignedByte => 1,
@@ -107,8 +125,20 @@ impl TForm {
             TFormType::Float64 => 8,
             TFormType::Complex32 => 8,
             TFormType::Complex64 => 16,
-            TFormType::ArrayD32(_) => 4,
-            TFormType::ArrayD64(_) => 8,
+            TFormType::ArrayD32(v, r) => {
+                r * TForm {
+                    dtype: (**v).clone(),
+                    repeats: 1,
+                }
+                .bytes()
+            }
+            TFormType::ArrayD64(v, r) => {
+                r * TForm {
+                    dtype: (**v).clone(),
+                    repeats: 1,
+                }
+                .bytes()
+            }
         }) * self.repeats
     }
 }
