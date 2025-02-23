@@ -66,6 +66,7 @@ impl HDU {
             }
         }
         let mut offset = nheaders * 2880;
+
         // Use the keywords to determine the data type
         if record.header.is_empty() {
             return Ok((record, offset));

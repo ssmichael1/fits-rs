@@ -191,6 +191,20 @@ mod tests {
     }
 
     #[test]
+    fn test_bintable() {
+        let fits = FITS::from_file("samp/IUElwp25637mxlo.fits");
+        match fits {
+            Ok(fits) => {
+                println!("{}", fits[1].header);
+            }
+            Err(e) => {
+                println!("Error: {}", e);
+                panic!("Error reading FITS file");
+            }
+        }
+    }
+
+    #[test]
     fn test_fits_from_file3() {
         let fits = FITS::from_file("samp/FOCx38i0101t_c0f.fits");
         match fits {
@@ -211,9 +225,7 @@ mod tests {
     fn test_fits_from_file() {
         let fits = FITS::from_file("samp/EUVEngc4151imgx.fits");
         match fits {
-            Ok(fits) => {
-                println!("{}", fits);
-            }
+            Ok(_fits) => {}
             Err(e) => {
                 println!("Error: {}", e);
                 panic!("Error reading FITS file");

@@ -30,6 +30,15 @@ impl std::ops::DerefMut for Header {
     }
 }
 
+impl std::fmt::Display for Header {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for kw in &self.0 {
+            writeln!(f, "  {}", kw)?;
+        }
+        Ok(())
+    }
+}
+
 impl Header {
     // Iterator to the keywords
     pub fn iter(&self) -> std::slice::Iter<Keyword> {
@@ -62,6 +71,78 @@ impl Header {
     ///
     pub fn value(&self, key: &str) -> Option<&KeywordValue> {
         self.0.iter().find(|x| x.name == key).map(|x| &x.value)
+    }
+
+    /// Return value if it is a string and key exists, else None
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The name of the keyword to find
+    ///
+    /// # Returns
+    ///
+    /// The value of the keyword if found and is a string, otherwise None
+    ///
+    pub fn value_string(&self, key: &str) -> Option<String> {
+        if let Some(KeywordValue::String(s)) = self.value(key) {
+            Some(s.clone())
+        } else {
+            None
+        }
+    }
+
+    /// Return value if it is an i64 and key exists, else None
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The name of the keyword to find
+    ///
+    /// # Returns
+    ///
+    /// The value of the keyword if found and is an i64, otherwise None
+    ///
+    pub fn value_int(&self, key: &str) -> Option<i64> {
+        if let Some(KeywordValue::Int(i)) = self.value(key) {
+            Some(*i)
+        } else {
+            None
+        }
+    }
+
+    /// Return value if it is a floating point and key exists, else None
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The name of the keyword to find
+    ///
+    /// # Returns
+    ///
+    /// The value of the keyword if found and is an f64, otherwise None
+    ///
+    pub fn value_float(&self, key: &str) -> Option<f64> {
+        if let Some(KeywordValue::Float(f)) = self.value(key) {
+            Some(*f)
+        } else {
+            None
+        }
+    }
+
+    /// Return value if it is a bool and key exists, else None
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The name of the keyword to find
+    ///
+    /// # Returns
+    ///
+    /// The value of the keyword if found and is a bool, otherwise None
+    ///
+    pub fn value_bool(&self, key: &str) -> Option<bool> {
+        if let Some(KeywordValue::Bool(b)) = self.value(key) {
+            Some(*b)
+        } else {
+            None
+        }
     }
 }
 

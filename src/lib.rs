@@ -86,6 +86,7 @@ mod image;
 mod table;
 mod tdisp;
 mod types;
+mod utils;
 mod wcs;
 
 pub(crate) use header::FITSBlock;

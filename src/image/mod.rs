@@ -5,6 +5,10 @@ use crate::HeaderError;
 use crate::KeywordValue;
 use crate::WCS;
 
+use crate::utils::*;
+
+use std::error::Error;
+
 /// Represent image data as described in a FITS file
 ///
 /// # This includes:
@@ -49,104 +53,27 @@ impl Image {
     ) -> Result<(HDUData, usize), Box<dyn std::error::Error>> {
         let mut image = HDUData::None;
 
-        let kwbitpix = header
-            .get(1)
-            .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
-        if kwbitpix.name != "BITPIX" {
-            return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                kwbitpix.name.clone(),
-                1,
-            )));
-        }
-        let bitpix = match &kwbitpix.value {
-            KeywordValue::Int(value) => Bitpix::from_i64(*value)?,
-            _ => {
-                return Err(Box::new(HeaderError::GenericError(
-                    "Invalid BITPIX value".to_string(),
-                )))
-            }
-        };
-        let kwaxes = header
-            .get(2)
-            .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
-        if kwaxes.name != "NAXIS" {
-            return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                kwaxes.name.clone(),
-                2,
-            )));
-        }
-        let naxis = match &kwaxes.value {
-            KeywordValue::Int(value) => *value as u16,
-            _ => {
-                return Err(Box::new(HeaderError::GenericError(
-                    "Invalid NAXIS value".to_string(),
-                )))
-            }
-        };
-        let mut axes = Vec::with_capacity(naxis as usize);
-        for i in 0..naxis {
-            let kwaxis = header
-                .get(3 + i as usize)
-                .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
-            if kwaxis.name != format!("NAXIS{}", i + 1) {
-                return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                    kwaxis.name.clone(),
-                    3 + i as usize,
-                )));
-            }
-            let axis = match &kwaxis.value {
-                KeywordValue::Int(value) => *value as usize,
-                _ => {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid NAXIS value".to_string(),
-                    )))
-                }
-            };
-            axes.push(axis);
-        }
+        let bitpixval = get_keyword_int_at_index(header, 1, "BITPIX")?;
+        let bitpix = Bitpix::from_i64(bitpixval)?;
+        let naxis = get_keyword_int_at_index(header, 2, "NAXIS")? as usize;
+        let axes = (0..naxis)
+            .map(|x| -> Result<usize, Box<dyn Error>> {
+                let ax = get_keyword_int_at_index(header, x + 3, &format!("NAXIS{}", x + 1))?;
+                Ok(ax as usize)
+            })
+            .collect::<Result<Vec<usize>, Box<dyn std::error::Error>>>()?;
+
         let mut pcount = 0;
         let mut gcount = 1;
         if KeywordValue::String("IMAGE".to_string()) == header[0].value {
             // loog for PCOUNT and GCOUNT keywords
-
-            let kwidx = 4 + naxis as usize;
-            let kwpcount = header
-                .get(kwidx)
-                .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
-            if kwpcount.name != "PCOUNT" {
-                return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                    kwpcount.name.clone(),
-                    kwidx,
-                )));
-            }
-            match &kwpcount.value {
-                KeywordValue::Int(value) => pcount = *value as usize,
-                _ => {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid PCOUNT value".to_string(),
-                    )))
-                }
-            }
-            let kwgcount = header
-                .get(kwidx + 1)
-                .ok_or(HeaderError::GenericError("not enough keywords".to_string()))?;
-            if kwgcount.name != "GCOUNT" {
-                return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                    kwgcount.name.clone(),
-                    kwidx + 1,
-                )));
-            }
-            match &kwgcount.value {
-                KeywordValue::Int(value) => gcount = *value as usize,
-                _ => {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid GCOUNT value".to_string(),
-                    )))
-                }
-            }
+            pcount = get_keyword_int_at_index(header, 3 + naxis, "PCOUNT")? as usize;
+            gcount = get_keyword_int_at_index(header, 4 + naxis, "GCOUNT")? as usize;
         }
-
-        let npixels = axes.iter().product::<usize>();
+        let npixels = match axes.is_empty() {
+            true => 0,
+            _ => axes.iter().product(),
+        } as usize;
         let nbytes = npixels * bitpix.size();
         if nbytes > 0 {
             // Extract raw bytes of image, but make sure they match large endian format

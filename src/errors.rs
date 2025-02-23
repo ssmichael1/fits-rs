@@ -25,4 +25,6 @@ pub enum HeaderError {
     UnexpectedKeywordValue(String, KeywordValue),
     #[error("Missing Keyword: {0}")]
     MissingKeyword(String),
+    #[error("Invalid TForm string: {0}")]
+    InvalidTForm(String),
 }

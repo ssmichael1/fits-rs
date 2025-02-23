@@ -14,6 +14,8 @@ pub enum TValue {
     Null,
 }
 
+pub enum BinTVaue {}
+
 /// "BITPIX" is a keyword in a a FITS header that describes
 /// the storage of raw pixels in the data section of the HDU
 ///
