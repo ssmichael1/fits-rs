@@ -60,13 +60,15 @@ use std::io::Read;
 ///
 /// ```
 /// use fits_rs::FITS;
+/// use fits_rs::HDUData;
 /// let fits = FITS::from_file("samp/WFPC2u5780205r_c0fx.fits");
 ///     match fits {
 ///         Ok(fits) => {
-///         let HDUData::Image(im) = &fits[0].data;
-///         println!("Image shape: {:?}", im.axes);
-///         println!("Image pixel type: {:?}", im.bitpix);
-///         println!("Image WCS: {:?}", im.wcs);
+///         if let HDUData::Image(im) = &fits[0].data {
+///             println!("Image shape: {:?}", im.axes);
+///             println!("Image pixel type: {:?}", im.pixeltype);
+///             println!("Image WCS: {:?}", im.wcs);
+///         }
 ///     }
 ///     Err(e) => {
 ///         println!("Error: {}", e);

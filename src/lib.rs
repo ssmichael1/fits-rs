@@ -20,8 +20,9 @@
 //! The FITS structure contains an array of HDUs.  These HDUs can be indexed in the FITS structure
 //! itself.  For example, to access the first HDU in a FITS file, you can use the following syntax:
 //! ```
-//! let fits = FITS::from_file("samp/WFPC2u5780205r_c0fx.fits");
-//! let hdu = fits.hdus[0];
+//! use fits_rs::FITS;
+//! let fits = FITS::from_file("samp/WFPC2u5780205r_c0fx.fits").unwrap();
+//! let hdu = &fits[0];
 //! ```
 //!
 //! ### HDU Structure
