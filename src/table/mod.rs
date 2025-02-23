@@ -112,14 +112,16 @@ impl Table {
         // Next is NAXIS2
         let nrows = get_keyword_int_at_index(header, 4, "NAXIS2")? as usize;
         // Next is PCOUNT, which is the size of the heap for table it is zero
-        check_int_keyword_at_index(header, 4, "PCOUNT", 0)?;
+        check_int_keyword_at_index(header, 5, "PCOUNT", 0)?;
         // Next is GCOUNT, must be 1
         check_int_keyword_at_index(header, 6, "GCOUNT", 1)?;
         // Next is TFIELDS
         table.nfields = get_keyword_int_at_index(header, 7, "TFIELDS")? as usize;
 
+        // Hold display format, if present
         let mut tdisp = Vec::<TDisp>::with_capacity(table.nfields);
         let mut tform = Vec::<TForm>::with_capacity(table.nfields);
+        // Hold null string,s if present
         let mut tnull = Vec::<Option<String>>::with_capacity(table.nfields);
 
         let mut tcol = Vec::with_capacity(table.nfields);
@@ -134,7 +136,7 @@ impl Table {
                 HeaderError::GenericError(
                     "Missing or incorrect TBCOL keyword in table".to_string(),
                 ),
-            )?);
+            )? as usize);
 
             // TType is name of field ; it is required if TFIELDS is not zero
             table
@@ -145,17 +147,8 @@ impl Table {
                     ),
                 )?);
 
-            if let Some(kw) = header.find(&format!("TNULL{}", i + 1)) {
-                if let KeywordValue::String(value) = &kw.value {
-                    tnull.push(Some(value.clone()));
-                } else {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid TNULL value".to_string(),
-                    )));
-                }
-            } else {
-                tnull.push(None);
-            }
+            // Is there a null specification for this field?
+            tnull.push(header.value_string(&format!("TNULL{}", i + 1)));
 
             // TForm is the data type; it is required if TFIELDS is not zero
             let kw = header
@@ -171,94 +164,34 @@ impl Table {
                 tdisp.push(TDisp::None);
             }
 
-            if let Some(kw) = header.find(&format!("TSCAL{}", i + 1)) {
-                if let KeywordValue::Float(value) = &kw.value {
-                    table.scale.push(Some(*value));
-                } else {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid TSCAL value".to_string(),
-                    )));
-                }
-            } else {
-                table.scale.push(None);
-            }
+            // Scale value page 20 of the FITS standard
+            table
+                .scale
+                .push(header.value_float(&format!("TSCAL{}", i + 1)));
+            // Zero offset value, page 20 of IFTS standard
+            table
+                .zero
+                .push(header.value_float(&format!("TZERO{}", i + 1)));
+            table
+                .units
+                .push(header.value_string(&format!("TUNIT{}", i + 1)));
 
-            if let Some(kw) = header.find(&format!("TZERO{}", i + 1)) {
-                if let KeywordValue::Float(value) = &kw.value {
-                    table.zero.push(Some(*value));
-                } else {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid TZERO value".to_string(),
-                    )));
-                }
-            } else {
-                table.zero.push(None);
-            }
-
-            // Get the units
-            if let Some(kw) = header.find(&format!("TUNIT{}", i + 1)) {
-                if let KeywordValue::String(value) = &kw.value {
-                    table.units.push(Some(value.clone()));
-                } else {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid TUNIT value".to_string(),
-                    )));
-                }
-            } else {
-                table.units.push(None);
-            }
-
-            // Get the minimum physical value in table at this column
-            if let Some(kw) = header.find(&format!("TDMIN{}", i + 1)) {
-                if let KeywordValue::Float(value) = &kw.value {
-                    table.tdmin.push(Some(*value));
-                } else {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid TDMIN value".to_string(),
-                    )));
-                }
-            } else {
-                table.tdmin.push(None);
-            }
-
-            // Get the maximum physical value in table at this column
-            if let Some(kw) = header.find(&format!("TDMAX{}", i + 1)) {
-                if let KeywordValue::Float(value) = &kw.value {
-                    table.tdmax.push(Some(*value));
-                } else {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid TDMAX value".to_string(),
-                    )));
-                }
-            } else {
-                table.tdmax.push(None);
-            }
-
-            // Get minimum value of field with valid interpretation
-            if let Some(kw) = header.find(&format!("TLMIN{}", i + 1)) {
-                if let KeywordValue::Float(value) = &kw.value {
-                    table.tlmin.push(Some(*value));
-                } else {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid TLMIN value".to_string(),
-                    )));
-                }
-            } else {
-                table.tlmin.push(None);
-            }
-
-            //  Get maximum value of field with valid interpretation
-            if let Some(kw) = header.find(&format!("TLMAX{}", i + 1)) {
-                if let KeywordValue::Float(value) = &kw.value {
-                    table.tlmax.push(Some(*value));
-                } else {
-                    return Err(Box::new(HeaderError::GenericError(
-                        "Invalid TLMAX value".to_string(),
-                    )));
-                }
-            } else {
-                table.tlmax.push(None);
-            }
+            // minimum value, pages 20-21 of standard
+            table
+                .tdmin
+                .push(header.value_float(&format!("TDMIN{}", i + 1)));
+            // maximum value of column, page 21 of standard
+            table
+                .tdmax
+                .push(header.value_float(&format!("TDMAX{}", i + 1)));
+            // Minimum value of field with valid interpretation, page 21 of standard
+            table
+                .tlmin
+                .push(header.value_float(&format!("TLMIN{}", i + 1)));
+            // Maximum value of field with valid interpretation, page 21 of standard
+            table
+                .tlmax
+                .push(header.value_float(&format!("TLMAX{}", i + 1)));
         }
 
         // Make sure data is long enough

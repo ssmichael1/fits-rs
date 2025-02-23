@@ -19,6 +19,13 @@ pub enum TFormType {
     ArrayD64(i64),
 }
 
+impl Default for TFormType {
+    fn default() -> Self {
+        TFormType::UnsignedByte
+    }
+}
+
+#[derive(Clone, Debug, Default)]
 pub struct TForm {
     pub dtype: TFormType,
     pub repeats: usize,

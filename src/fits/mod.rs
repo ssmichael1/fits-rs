@@ -197,7 +197,15 @@ mod tests {
         let fits = FITS::from_file("samp/IUElwp25637mxlo.fits");
         match fits {
             Ok(fits) => {
-                println!("{}", fits[1].header);
+                if let crate::HDUData::BinTable(bt) = &fits[1].data {
+                    println!("rows = {}", bt.nrows);
+                    println!("cols = {}", bt.ncols);
+                    for row in 0..bt.nrows {
+                        for col in 0..bt.ncols {
+                            println!("{},{} = {:?}", row, col, bt.at(row, col).unwrap());
+                        }
+                    }
+                }
             }
             Err(e) => {
                 println!("Error: {}", e);
