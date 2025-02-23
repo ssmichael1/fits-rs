@@ -1,7 +1,6 @@
 use crate::Bitpix;
 use crate::HDUData;
 use crate::Header;
-use crate::HeaderError;
 use crate::KeywordValue;
 use crate::WCS;
 

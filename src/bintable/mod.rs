@@ -104,11 +104,11 @@ impl BinTable {
 
             bintable
                 .tlmax
-                .push(header.value_float(&format!("TLMAXP{}", i + 1)));
+                .push(header.value_float(&format!("TLMAX{}", i + 1)));
 
             bintable
                 .tdmin
-                .push(header.value_float(&format!("TDMINP{}", i + 1)));
+                .push(header.value_float(&format!("TDMIN{}", i + 1)));
 
             bintable
                 .tdmax
