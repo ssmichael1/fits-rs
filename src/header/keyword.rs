@@ -1,4 +1,4 @@
-use crate::HeaderError;
+use crate::FITSError;
 
 /// Types of values in a FITS Keyword
 ///
@@ -83,7 +83,7 @@ impl Keyword {
     ///
     pub(crate) fn from_bytes(kwstr: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         if kwstr.len() != 80 {
-            return Err(Box::new(HeaderError::BadKeywordLength(kwstr.len())));
+            return Err(Box::new(FITSError::BadKeywordLength(kwstr.len())));
         }
         let kwname = &kwstr[0..8];
 
@@ -91,7 +91,7 @@ impl Keyword {
         for c in kwname {
             let c = *c as char;
             if !c.is_ascii_uppercase() && c != ' ' && !c.is_ascii_digit() && c != '_' && c != '-' {
-                return Err(Box::new(HeaderError::InvalidCharacterInKeyword(
+                return Err(Box::new(FITSError::InvalidCharacterInKeyword(
                     String::from_utf8(kwname.to_vec())?,
                 )));
             }
@@ -104,7 +104,7 @@ impl Keyword {
         kwname = kwname.trim_ascii().to_string();
         if kwname.contains(' ') {
             println!("here");
-            return Err(Box::new(HeaderError::InvalidCharacterInKeyword(kwname)));
+            return Err(Box::new(FITSError::InvalidCharacterInKeyword(kwname)));
         }
 
         // Construct the keyword to be returned later
@@ -222,21 +222,21 @@ impl Keyword {
                     let start = complexstr.find('(');
                     let end = complexstr.find(')');
                     if start.is_none() || end.is_none() {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
+                        return Err(Box::new(FITSError::InvalidKeywordRecord(
                             String::from_utf8(kwstr.to_vec())?,
                         )));
                     }
                     let start = start.unwrap();
                     let end = end.unwrap();
                     if end < start {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
+                        return Err(Box::new(FITSError::InvalidKeywordRecord(
                             String::from_utf8(kwstr.to_vec())?,
                         )));
                     }
                     let parts = complexstr[(start + 1)..end].split(",");
                     let parts = parts.map(|x| x.trim()).collect::<Vec<_>>();
                     if parts.len() != 2 {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
+                        return Err(Box::new(FITSError::InvalidKeywordRecord(
                             String::from_utf8(kwstr.to_vec())?,
                         )));
                     }
@@ -256,21 +256,21 @@ impl Keyword {
                     let start = complexstr.find('(');
                     let end = complexstr.find(')');
                     if start.is_none() || end.is_none() {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
+                        return Err(Box::new(FITSError::InvalidKeywordRecord(
                             String::from_utf8(kwstr.to_vec())?,
                         )));
                     }
                     let start = start.unwrap();
                     let end = end.unwrap();
                     if end < start {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
+                        return Err(Box::new(FITSError::InvalidKeywordRecord(
                             String::from_utf8(kwstr.to_vec())?,
                         )));
                     }
                     let parts = complexstr[(start + 1)..end].split(",");
                     let parts = parts.map(|x| x.trim()).collect::<Vec<_>>();
                     if parts.len() != 2 {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
+                        return Err(Box::new(FITSError::InvalidKeywordRecord(
                             String::from_utf8(kwstr.to_vec())?,
                         )));
                     }
@@ -285,7 +285,7 @@ impl Keyword {
                         }
                     }
                 } else {
-                    return Err(Box::new(HeaderError::InvalidKeywordRecord(
+                    return Err(Box::new(FITSError::InvalidKeywordRecord(
                         String::from_utf8(kwstr.to_vec())?,
                     )));
                 }

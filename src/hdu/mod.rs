@@ -2,7 +2,7 @@ use crate::types::HDUData;
 use crate::BinTable;
 use crate::FITSBlock;
 use crate::Header;
-use crate::HeaderError;
+use crate::FITSError;
 use crate::Image;
 use crate::KeywordValue;
 use crate::Table;
@@ -112,7 +112,7 @@ impl HDU {
 
                             _ => {
                                 // Unsupported extension ; report error
-                                return Err(Box::new(HeaderError::UnsupportedExtension(
+                                return Err(Box::new(FITSError::UnsupportedExtension(
                                     value.clone(),
                                 )));
                             }
@@ -120,7 +120,7 @@ impl HDU {
                     }
                     _ => {
                         // Unsupported extension ; report error
-                        return Err(Box::new(HeaderError::UnsupportedExtension(
+                        return Err(Box::new(FITSError::UnsupportedExtension(
                             "Extension Value not a string".to_string(),
                         )));
                     }

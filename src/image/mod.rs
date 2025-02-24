@@ -36,12 +36,15 @@ impl Image {
 
     /// Construct an image from raw bytes from the file
     ///
-    /// Arguments:
+    /// # Arguments:
     ///
     /// * `header` - Header information for the image
     /// * `rawbytes` - Raw bytes starting from "data" portion of HDU
     ///
-    /// Returns:
+    /// # Note:
+    /// This is most likely called by the `HDU` struct and not directly
+    /// 
+    /// # Returns:
     ///
     /// * `HDUData` - Image data
     /// * `usize` - Number of bytes consumed
@@ -143,12 +146,10 @@ impl Image {
         Ok((image, nbytes))
     }
 
-    /// Access raw pixels in native format ...
-    /// This must be explicitly set and is
+    /// Access raw pixels in native format. This must be explicitly set and is
     /// based upon the pixel type
     ///
-    /// # Note: endian conversion has already
-    ///   been performed if needed on data ingest
+    /// # Note: endian conversion has alread been performed if needed on data ingest
     ///
     /// # Casting based upon Bitpix  values
     /// * `Bitpix::Int8`    : u8
@@ -157,6 +158,7 @@ impl Image {
     /// * `Bitpix::Int64`   : u64
     /// * `Bitpix::Float32` : f32
     /// * `Bitpix::Float64` : f64
+    /// 
     pub fn pixels<T>(&self) -> &[T]
     where
         T: bytemuck::Pod,

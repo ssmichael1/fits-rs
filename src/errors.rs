@@ -3,18 +3,6 @@ use thiserror::Error;
 
 #[derive(Clone, Error, Debug)]
 pub enum FITSError {
-    #[error("Invalid Data Bytes Available: Expected {0}, got {1}")]
-    InvalidDataSize(usize, usize),
-    #[error("Invalid Row: {0} ; Max Row: {1}")]
-    InvalidRow(usize, usize),
-    #[error("Invalid Column: {0} ; Max Column: {1}")]
-    InvalidColumn(usize, usize),
-    #[error("Error: {0}")]
-    GenericError(String),
-}
-
-#[derive(Clone, Error, Debug)]
-pub enum HeaderError {
     #[error("Invalid header")]
     InvalidHeader,
     #[error("Bad Keyword Length: {0}")]
@@ -39,4 +27,10 @@ pub enum HeaderError {
     MissingKeyword(String),
     #[error("Invalid TForm string: {0}")]
     InvalidTForm(String),
+    #[error("Invalid Data Bytes Available: Expected {0}, got {1}")]
+    InvalidDataSize(usize, usize),
+    #[error("Invalid Row: {0} ; Max Row: {1}")]
+    InvalidRow(usize, usize),
+    #[error("Invalid Column: {0} ; Max Column: {1}")]
+    InvalidColumn(usize, usize),
 }

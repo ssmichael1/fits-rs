@@ -1,6 +1,6 @@
 use crate::HDUData;
 use crate::Header;
-use crate::HeaderError;
+use crate::FITSError;
 use crate::Keyword;
 use crate::KeywordValue;
 use crate::TDisp;
@@ -50,7 +50,7 @@ impl Table {
     fn tform_from_keyword(kw: &Keyword) -> Result<TForm, Box<dyn Error>> {
         if let KeywordValue::String(value) = &kw.value {
             if value.len() < 2 {
-                return Err(Box::new(HeaderError::GenericError(
+                return Err(Box::new(FITSError::GenericError(
                     "Invalid TFORM value".to_string(),
                 )));
             }
@@ -82,12 +82,12 @@ impl Table {
                     let dec = iter.next().unwrap().parse::<usize>()?;
                     Ok(TForm::FloatD(width, dec))
                 }
-                _ => Err(Box::new(HeaderError::GenericError(
+                _ => Err(Box::new(FITSError::GenericError(
                     "Invalid TFORM value".to_string(),
                 ))),
             }
         } else {
-            Err(Box::new(HeaderError::GenericError(
+            Err(Box::new(FITSError::GenericError(
                 "Invalid TFORM value".to_string(),
             )))
         }
@@ -133,7 +133,7 @@ impl Table {
 
         for i in 0..table.nfields {
             tcol.push(header.value_int(&format!("TBCOL{}", i + 1)).ok_or(
-                HeaderError::GenericError(
+                FITSError::GenericError(
                     "Missing or incorrect TBCOL keyword in table".to_string(),
                 ),
             )? as usize);
@@ -142,7 +142,7 @@ impl Table {
             table
                 .fieldnames
                 .push(header.value_string(&format!("TTYPE{}", i + 1)).ok_or(
-                    HeaderError::GenericError(
+                    FITSError::GenericError(
                         "Missing or incorrect TTYPE keyword in table".to_string(),
                     ),
                 )?);
@@ -153,7 +153,7 @@ impl Table {
             // TForm is the data type; it is required if TFIELDS is not zero
             let kw = header
                 .find(&format!("TFORM{}", i + 1))
-                .ok_or(HeaderError::GenericError(
+                .ok_or(FITSError::GenericError(
                     "Missing TFORM keyword".to_string(),
                 ))?;
             tform.push(Table::tform_from_keyword(kw)?);
@@ -196,7 +196,7 @@ impl Table {
 
         // Make sure data is long enough
         if rawbytes.len() < nrows * nrowchars {
-            return Err(Box::new(HeaderError::GenericError(
+            return Err(Box::new(FITSError::GenericError(
                 "Table data is too short".to_string(),
             )));
         }

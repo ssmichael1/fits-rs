@@ -1,6 +1,6 @@
 use crate::HDUData;
 use crate::Header;
-use crate::HeaderError;
+use crate::FITSError;
 use crate::KeywordValue;
 use crate::TDisp;
 
@@ -42,10 +42,10 @@ fn string_or_err(header: &Header, kw: &str) -> Result<String, Box<dyn Error>> {
         if let KeywordValue::String(s) = kw {
             Ok(s.clone())
         } else {
-            Err(Box::new(HeaderError::UnexpectedValueType(kw.to_string())))
+            Err(Box::new(FITSError::UnexpectedValueType(kw.to_string())))
         }
     } else {
-        Err(Box::new(HeaderError::MissingKeyword(kw.to_string())))
+        Err(Box::new(FITSError::MissingKeyword(kw.to_string())))
     }
 }
 

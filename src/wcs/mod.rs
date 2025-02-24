@@ -1,4 +1,4 @@
-use crate::errors::HeaderError;
+use crate::errors::FITSError;
 use crate::Header;
 use crate::KeywordValue;
 use crate::Matrix;
@@ -25,7 +25,7 @@ impl WCS {
             if let KeywordValue::Int(ax) = kw {
                 wcs.wcaxes = Some(*ax as usize);
             } else {
-                return Err(Box::new(HeaderError::UnexpectedValueType("WCSAXES".into())));
+                return Err(Box::new(FITSError::UnexpectedValueType("WCSAXES".into())));
             }
         } else {
             wcs.wcaxes = None;

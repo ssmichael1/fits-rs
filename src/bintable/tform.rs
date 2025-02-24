@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::HeaderError;
+use crate::FITSError;
 
 use std::rc::Rc;
 
@@ -46,14 +46,14 @@ fn tform_type_from_char(c: char) -> Result<TFormType, Box<dyn Error>> {
         'M' => Ok(TFormType::Complex64),
         'P' => Ok(TFormType::ArrayD32(Rc::new(TFormType::default()), 0)),
         'Q' => Ok(TFormType::ArrayD64(Rc::new(TFormType::default()), 0)),
-        _ => Err(Box::new(HeaderError::InvalidTForm(c.to_string()))),
+        _ => Err(Box::new(FITSError::InvalidTForm(c.to_string()))),
     }
 }
 
 impl TForm {
     pub fn from_string(s: &str) -> Result<Self, Box<dyn Error>> {
         if s.is_empty() {
-            return Err(Box::new(HeaderError::InvalidTForm(s.to_string())));
+            return Err(Box::new(FITSError::InvalidTForm(s.to_string())));
         }
         let numstr = s
             .chars()
@@ -68,7 +68,7 @@ impl TForm {
         let dtype = tform_type_from_char(
             s.chars()
                 .nth(numstr.len())
-                .ok_or(HeaderError::InvalidTForm(s.to_string()))?,
+                .ok_or(FITSError::InvalidTForm(s.to_string()))?,
         )?;
 
         if dtype == TFormType::ArrayD32(Rc::new(TFormType::default()), 0)
@@ -77,7 +77,7 @@ impl TForm {
             let tchar = s
                 .chars()
                 .nth(numstr.len())
-                .ok_or(HeaderError::InvalidTForm(s.to_string()))?;
+                .ok_or(FITSError::InvalidTForm(s.to_string()))?;
             let ttype = tform_type_from_char(tchar)?;
 
             let arrstr = s.chars().skip(numstr.len() + 1).collect::<String>();
