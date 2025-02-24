@@ -22,5 +22,4 @@ pub enum BinTableValue {
     Float64Arr(Vec<f64>),
     Complex32Arr(Vec<(f32, f32)>),
     Complex64Arr(Vec<(f64, f64)>),
-    Array(Box<Vec<BinTableValue>>),
 }

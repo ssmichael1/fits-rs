@@ -1,4 +1,3 @@
-use crate::FITSError;
 use crate::HDUData;
 use crate::Header;
 use crate::HeaderError;

@@ -4,6 +4,7 @@ use crate::HeaderError;
 
 use std::rc::Rc;
 
+/// The elemental types of a table column
 #[derive(Clone, Debug, PartialEq, Default)]
 pub enum TFormType {
     Logical,
@@ -22,6 +23,8 @@ pub enum TFormType {
     ArrayD64(Rc<TFormType>, usize),
 }
 
+/// The Form (type) of a table column
+/// reprsented by an elemental type and a repeat count
 #[derive(Clone, Debug, Default)]
 pub struct TForm {
     pub dtype: TFormType,
@@ -104,6 +107,13 @@ impl TForm {
         }
     }
 
+    /// Return the number of bytes required to store the data type
+    /// described by the TForm
+    ///
+    /// # Returns
+    ///
+    /// The number of bytes required to store the data type
+    ///
     pub fn bytes(&self) -> usize {
         if self.dtype == TFormType::Bit {
             if self.repeats % 8 == 0 {
