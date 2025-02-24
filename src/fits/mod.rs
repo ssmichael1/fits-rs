@@ -76,7 +76,7 @@ use std::io::Read;
 ///     }
 /// }
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct FITS {
     hdus: Vec<HDU>,
 }
@@ -90,16 +90,7 @@ impl std::fmt::Display for FITS {
     }
 }
 
-impl Default for FITS {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl FITS {
-    pub fn new() -> Self {
-        FITS { hdus: Vec::new() }
-    }
 
     /// Return the HDU at the given index
     ///
@@ -133,7 +124,7 @@ impl FITS {
     /// A FITS structure containing the contents of the file
     ///
     pub fn from_file(file: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let mut fits = FITS::new();
+        let mut fits = FITS::default();
 
         // Read the file and parse the header
         // Create a stream for the file
