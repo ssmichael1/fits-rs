@@ -139,11 +139,19 @@ impl HDU {
 
 impl std::fmt::Display for HDU {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for keyword in self.header.iter() {
-            writeln!(f, "  {}", keyword)?;
-        }
-        if let HDUData::Table(t) = &self.data {
-            writeln!(f, "  Table: {:?}", t)?;
+        match &self.data {
+            HDUData::Image(_i) => {
+                writeln!(f, "Image")?;
+            }
+            HDUData::Table(_t) => {
+                writeln!(f, "Table")?;
+            }
+            HDUData::BinTable(_b) => {
+                writeln!(f, "BinTable")?;
+            }
+            HDUData::None => {
+                writeln!(f, "No data")?;
+            }
         }
 
         Ok(())

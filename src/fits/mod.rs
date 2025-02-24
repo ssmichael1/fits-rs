@@ -83,8 +83,9 @@ pub struct FITS {
 
 impl std::fmt::Display for FITS {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for record in &self.hdus {
-            write!(f, "\n{}", record)?;
+        writeln!(f, "FITS File")?;
+        for (count, record) in self.hdus.iter().enumerate() {
+            write!(f, "  {} : {}", count, record)?;
         }
         Ok(())
     }
@@ -174,7 +175,7 @@ mod tests {
         let fits = FITS::from_file("testfiles/FGSf64y0106m_a1f.fits");
         match fits {
             Ok(fits) => {
-                println!("{}", fits[1]);
+                println!("{}", fits);
             }
             Err(e) => {
                 println!("Error: {}", e);
