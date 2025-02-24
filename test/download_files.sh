@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Download FITS files used to test this library
+# These example files are provided by NASA
+
 testdir=testfiles
 if [ ! -d $testdir ]; then
     mkdir -p $testdir

@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn test_fits_from_file1() {
-        let fits = FITS::from_file("samp/WFPC2u5780205r_c0fx.fits");
+        let fits = FITS::from_file("testfiles/WFPC2u5780205r_c0fx.fits");
         match fits {
             Ok(_fits) => {}
             Err(e) => {
@@ -171,7 +171,7 @@ mod tests {
 
     #[test]
     fn test_fits_from_file2() {
-        let fits = FITS::from_file("samp/FGSf64y0106m_a1f.fits");
+        let fits = FITS::from_file("testfiles/FGSf64y0106m_a1f.fits");
         match fits {
             Ok(fits) => {
                 println!("{}", fits[1]);
@@ -185,13 +185,16 @@ mod tests {
 
     #[test]
     fn test_bintable() {
-        let fits = FITS::from_file("samp/IUElwp25637mxlo.fits");
+        let fits = FITS::from_file("testfiles/IUElwp25637mxlo.fits");
         match fits {
             Ok(fits) => {
                 if let crate::HDUData::BinTable(bt) = &fits[1].data {
                     println!("rows = {}", bt.nrows);
                     println!("cols = {}", bt.ncols);
-                    for row in 0..bt.nrows {
+                    for col in 0..bt.ncols {
+                        println!("col {} = {:?}", col, bt.fieldname[col]);
+                    }
+                    for row in 0..bt.nrows {                        
                         for col in 0..bt.ncols {
                             println!("{},{} = {:?}", row, col, bt.at(row, col).unwrap());
                         }
@@ -207,7 +210,7 @@ mod tests {
 
     #[test]
     fn test_fits_from_file3() {
-        let fits = FITS::from_file("samp/FOCx38i0101t_c0f.fits");
+        let fits = FITS::from_file("testfiles/FOCx38i0101t_c0f.fits");
         match fits {
             Ok(fits) => {
                 if let crate::HDUData::Image(im) = &fits[0].data {
@@ -224,7 +227,7 @@ mod tests {
 
     #[test]
     fn test_fits_from_file() {
-        let fits = FITS::from_file("samp/EUVEngc4151imgx.fits");
+        let fits = FITS::from_file("testfiles/EUVEngc4151imgx.fits");
         match fits {
             Ok(_fits) => {}
             Err(e) => {
