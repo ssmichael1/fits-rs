@@ -2,10 +2,12 @@ use crate::types::HDUData;
 use crate::BinTable;
 use crate::FITSBlock;
 use crate::Header;
-use crate::HeaderError;
 use crate::Image;
 use crate::KeywordValue;
 use crate::Table;
+
+use anyhow::{anyhow, Result};
+
 // Header and Data Unit
 //
 // This is comprosed of a header and optionally data (image or table)
@@ -44,7 +46,7 @@ impl HDU {
     ///
     /// A tuple containing the HDU and the number of bytes read, or an error
     ///
-    pub(crate) fn from_bytes(rawbytes: &[u8]) -> Result<(Self, usize), Box<dyn std::error::Error>> {
+    pub(crate) fn from_bytes(rawbytes: &[u8]) -> Result<(Self, usize)> {
         let mut record = HDU::default();
         let mut nheaders = 0;
 
@@ -112,17 +114,16 @@ impl HDU {
 
                             _ => {
                                 // Unsupported extension ; report error
-                                return Err(Box::new(HeaderError::UnsupportedExtension(
-                                    value.clone(),
-                                )));
+                                return Err(anyhow!("Unsupported extension: {}", value));
                             }
                         }
                     }
                     _ => {
                         // Unsupported extension ; report error
-                        return Err(Box::new(HeaderError::UnsupportedExtension(
-                            "Extension Value not a string".to_string(),
-                        )));
+                        return Err(anyhow!(
+                            "Extension type is not a string: {}",
+                            record.header[0].value
+                        ));
                     }
                 }
             }

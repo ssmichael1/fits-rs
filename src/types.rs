@@ -1,3 +1,5 @@
+use anyhow::{anyhow, Result};
+
 #[derive(Debug, Clone)]
 pub enum HDUData {
     None,
@@ -36,7 +38,7 @@ pub enum Bitpix {
 impl Bitpix {
     /// Get from raw integer values
     /// See Table 8 of the FITS Standard for more information
-    pub fn from_i64(value: i64) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_i64(value: i64) -> Result<Self> {
         match value {
             8 => Ok(Bitpix::Int8),
             16 => Ok(Bitpix::Int16),
@@ -44,10 +46,10 @@ impl Bitpix {
             64 => Ok(Bitpix::Int64),
             -32 => Ok(Bitpix::Float32),
             -64 => Ok(Bitpix::Float64),
-            _ => Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "Invalid BITPIX value",
-            ))),
+            _ => Err(anyhow!(
+                "Invalid BITPIX value: {}. Must be one of 8, 16, 32, 64, -32, -64",
+                value
+            )),
         }
     }
 

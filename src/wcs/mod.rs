@@ -1,7 +1,8 @@
-use crate::errors::HeaderError;
 use crate::Header;
 use crate::KeywordValue;
 use crate::Matrix;
+
+use anyhow::{anyhow, Result};
 
 /// World Coordinate System transformations
 /// See Chapter 8 of FITS standard, version 4
@@ -18,14 +19,14 @@ pub struct WCS {
 }
 
 impl WCS {
-    pub fn from_header(header: &Header) -> Result<Option<Self>, Box<dyn std::error::Error>> {
+    pub fn from_header(header: &Header) -> Result<Option<Self>> {
         let mut wcs = WCS::default();
         // See if this is explicitly set
         if let Some(kw) = header.value("WCSAXES") {
             if let KeywordValue::Int(ax) = kw {
                 wcs.wcaxes = Some(*ax as usize);
             } else {
-                return Err(Box::new(HeaderError::UnexpectedValueType("WCSAXES".into())));
+                return Err(anyhow!("Invalid WCSAXES value: expected Int, got {:?}", kw));
             }
         } else {
             wcs.wcaxes = None;

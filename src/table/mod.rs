@@ -1,6 +1,5 @@
 use crate::HDUData;
 use crate::Header;
-use crate::HeaderError;
 use crate::Keyword;
 use crate::KeywordValue;
 use crate::TDisp;
@@ -8,7 +7,7 @@ use crate::TValue;
 
 use crate::utils::*;
 
-use std::error::Error;
+use anyhow::{anyhow, Context, Result};
 
 enum TForm {
     Char(usize),
@@ -47,33 +46,51 @@ pub struct Table {
 }
 
 impl Table {
-    fn tform_from_keyword(kw: &Keyword) -> Result<TForm, Box<dyn Error>> {
+    fn tform_from_keyword(kw: &Keyword) -> Result<TForm> {
         if let KeywordValue::String(value) = &kw.value {
             if value.len() < 2 {
-                return Err(Box::new(HeaderError::GenericError(
-                    "Invalid TFORM value".to_string(),
-                )));
+                return Err(anyhow!("Invalid TFORM value: {}", value));
             }
             let id = value.chars().next().unwrap();
             match id {
                 'A' => {
-                    let width = value[1..].parse::<usize>()?;
+                    let width = value[1..]
+                        .parse::<usize>()
+                        .context(format!("Error parsing table value width in {}", value))?;
                     Ok(TForm::Char(width))
                 }
                 'I' => {
-                    let width = value[1..].parse::<usize>()?;
+                    let width = value[1..]
+                        .parse::<usize>()
+                        .context(format!("Error parsing table value width in {}", value))?;
                     Ok(TForm::Int(width))
                 }
                 'F' => {
                     let mut iter = value[1..].split('.');
-                    let width = iter.next().unwrap().parse::<usize>()?;
-                    let dec = iter.next().unwrap().parse::<usize>()?;
+                    let width = iter
+                        .next()
+                        .unwrap()
+                        .parse::<usize>()
+                        .context(format!("Error parsing table value width in {}", value))?;
+                    let dec = iter
+                        .next()
+                        .unwrap()
+                        .parse::<usize>()
+                        .context(format!("Error parsing table value decimals in {}", value))?;
                     Ok(TForm::FloatDec(width, dec))
                 }
                 'E' => {
                     let mut iter = value[1..].split('.');
-                    let width = iter.next().unwrap().parse::<usize>()?;
-                    let dec = iter.next().unwrap().parse::<usize>()?;
+                    let width = iter
+                        .next()
+                        .unwrap()
+                        .parse::<usize>()
+                        .context(format!("Error parsing table value width in {}", value))?;
+                    let dec = iter
+                        .next()
+                        .unwrap()
+                        .parse::<usize>()
+                        .context(format!("Error parsing table value decimals in {}", value))?;
                     Ok(TForm::FloatE(width, dec))
                 }
                 'D' => {
@@ -82,21 +99,17 @@ impl Table {
                     let dec = iter.next().unwrap().parse::<usize>()?;
                     Ok(TForm::FloatD(width, dec))
                 }
-                _ => Err(Box::new(HeaderError::GenericError(
-                    "Invalid TFORM value".to_string(),
-                ))),
+                _ => Err(anyhow!("Invalid TFORM value: {}", value)),
             }
         } else {
-            Err(Box::new(HeaderError::GenericError(
-                "Invalid TFORM value".to_string(),
-            )))
+            Err(anyhow!(
+                "Invalid TFORM value type: {}",
+                kw.value.to_string()
+            ))
         }
     }
 
-    pub fn from_bytes(
-        header: &Header,
-        rawbytes: &[u8],
-    ) -> Result<(HDUData, usize), Box<dyn std::error::Error>> {
+    pub fn from_bytes(header: &Header, rawbytes: &[u8]) -> Result<(HDUData, usize)> {
         // Section 7.2 of the fits standard 4.0 manual
         // Note: this is an objectively awful way to store a table
         // but it is the standard
@@ -132,20 +145,19 @@ impl Table {
         table.units = Vec::with_capacity(table.nfields);
 
         for i in 0..table.nfields {
-            tcol.push(header.value_int(&format!("TBCOL{}", i + 1)).ok_or(
-                HeaderError::GenericError(
-                    "Missing or incorrect TBCOL keyword in table".to_string(),
-                ),
-            )? as usize);
+            tcol.push(
+                header
+                    .value_int(&format!("TBCOL{}", i + 1))
+                    .context("Missing or incorrect TBBCOL value in table")?
+                    as usize,
+            );
 
             // TType is name of field ; it is required if TFIELDS is not zero
-            table
-                .fieldnames
-                .push(header.value_string(&format!("TTYPE{}", i + 1)).ok_or(
-                    HeaderError::GenericError(
-                        "Missing or incorrect TTYPE keyword in table".to_string(),
-                    ),
-                )?);
+            table.fieldnames.push(
+                header
+                    .value_string(&format!("TTYPE{}", i + 1))
+                    .context("Missing or incorrect TTYPE value in table")?,
+            );
 
             // Is there a null specification for this field?
             tnull.push(header.value_string(&format!("TNULL{}", i + 1)));
@@ -153,9 +165,7 @@ impl Table {
             // TForm is the data type; it is required if TFIELDS is not zero
             let kw = header
                 .find(&format!("TFORM{}", i + 1))
-                .ok_or(HeaderError::GenericError(
-                    "Missing TFORM keyword".to_string(),
-                ))?;
+                .context("missing or incorrect TFORM value in table")?;
             tform.push(Table::tform_from_keyword(kw)?);
 
             if let Some(kw) = header.find(&format!("TDISP{}", i + 1)) {
@@ -196,9 +206,11 @@ impl Table {
 
         // Make sure data is long enough
         if rawbytes.len() < nrows * nrowchars {
-            return Err(Box::new(HeaderError::GenericError(
-                "Table data is too short".to_string(),
-            )));
+            return Err(anyhow!(
+                "Not enough data in table: {} bytes, need {}",
+                rawbytes.len(),
+                nrows * nrowchars
+            ));
         }
 
         // OK, now actually read in the table data

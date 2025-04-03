@@ -1,4 +1,4 @@
-use crate::HeaderError;
+use anyhow::{anyhow, Result};
 
 /// Types of values in a FITS Keyword
 ///
@@ -81,9 +81,9 @@ impl Keyword {
     ///
     /// A new Keyword if successful, otherwise an error
     ///
-    pub(crate) fn from_bytes(kwstr: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
+    pub(crate) fn from_bytes(kwstr: &[u8]) -> Result<Self> {
         if kwstr.len() != 80 {
-            return Err(Box::new(HeaderError::BadKeywordLength(kwstr.len())));
+            return Err(anyhow!("Invalid keyword length: {}", kwstr.len()));
         }
         let kwname = &kwstr[0..8];
 
@@ -91,9 +91,7 @@ impl Keyword {
         for c in kwname {
             let c = *c as char;
             if !c.is_ascii_uppercase() && c != ' ' && !c.is_ascii_digit() && c != '_' && c != '-' {
-                return Err(Box::new(HeaderError::InvalidCharacterInKeyword(
-                    String::from_utf8(kwname.to_vec())?,
-                )));
+                return Err(anyhow!("Invalid character in keyword name: {}", c));
             }
         }
 
@@ -103,8 +101,7 @@ impl Keyword {
         // per Section 4.1.2.1
         kwname = kwname.trim_ascii().to_string();
         if kwname.contains(' ') {
-            println!("here");
-            return Err(Box::new(HeaderError::InvalidCharacterInKeyword(kwname)));
+            return Err(anyhow!("Keyword contains intermediate spaces"));
         }
 
         // Construct the keyword to be returned later
@@ -222,23 +219,23 @@ impl Keyword {
                     let start = complexstr.find('(');
                     let end = complexstr.find(')');
                     if start.is_none() || end.is_none() {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
-                            String::from_utf8(kwstr.to_vec())?,
-                        )));
+                        return Err(anyhow!("Cannot find expected complex int in value"));
                     }
                     let start = start.unwrap();
                     let end = end.unwrap();
                     if end < start {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
-                            String::from_utf8(kwstr.to_vec())?,
-                        )));
+                        return Err(anyhow!(
+                            "Cannot find expected complex int in value: {}",
+                            complexstr
+                        ));
                     }
                     let parts = complexstr[(start + 1)..end].split(",");
                     let parts = parts.map(|x| x.trim()).collect::<Vec<_>>();
                     if parts.len() != 2 {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
-                            String::from_utf8(kwstr.to_vec())?,
-                        )));
+                        return Err(anyhow!(
+                            "Cannot find expected complex int in value: {}",
+                            complexstr
+                        ));
                     }
                     let real = parts[0].parse::<i64>()?;
                     let imag = parts[1].parse::<i64>()?;
@@ -256,23 +253,26 @@ impl Keyword {
                     let start = complexstr.find('(');
                     let end = complexstr.find(')');
                     if start.is_none() || end.is_none() {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
-                            String::from_utf8(kwstr.to_vec())?,
-                        )));
+                        return Err(anyhow!(
+                            "Cannot find expected complex float in value: {}",
+                            complexstr
+                        ));
                     }
                     let start = start.unwrap();
                     let end = end.unwrap();
                     if end < start {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
-                            String::from_utf8(kwstr.to_vec())?,
-                        )));
+                        return Err(anyhow!(
+                            "Cannot find expected complex float in value: {}",
+                            complexstr
+                        ));
                     }
                     let parts = complexstr[(start + 1)..end].split(",");
                     let parts = parts.map(|x| x.trim()).collect::<Vec<_>>();
                     if parts.len() != 2 {
-                        return Err(Box::new(HeaderError::InvalidKeywordRecord(
-                            String::from_utf8(kwstr.to_vec())?,
-                        )));
+                        return Err(anyhow!(
+                            "Cannot find expected complex float in value: {}",
+                            complexstr
+                        ));
                     }
                     let real = parts[0].parse::<f64>()?;
                     let imag = parts[1].parse::<f64>()?;
@@ -285,9 +285,7 @@ impl Keyword {
                         }
                     }
                 } else {
-                    return Err(Box::new(HeaderError::InvalidKeywordRecord(
-                        String::from_utf8(kwstr.to_vec())?,
-                    )));
+                    return Err(anyhow!("Invalid keyword value: {}", kvchars));
                 }
             }
         }

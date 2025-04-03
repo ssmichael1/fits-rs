@@ -15,8 +15,9 @@ name = "fits_rs"
 
 [dependencies]
 bytemuck = { version = "1.21.0", features = ["derive"] }
-thiserror = "2.0.11"
+thiserror = "2.0.12"
 nalgebra = "0.33.2"
+anyhow = "1"
 
 [build-dependencies]
 

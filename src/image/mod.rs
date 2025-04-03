@@ -6,7 +6,7 @@ use crate::WCS;
 
 use crate::utils::*;
 
-use std::error::Error;
+use anyhow::Result;
 
 /// Represent image data as described in a FITS file
 ///
@@ -46,21 +46,18 @@ impl Image {
     /// * `HDUData` - Image data
     /// * `usize` - Number of bytes consumed
     ///
-    pub(crate) fn from_bytes(
-        header: &Header,
-        rawbytes: &[u8],
-    ) -> Result<(HDUData, usize), Box<dyn std::error::Error>> {
+    pub(crate) fn from_bytes(header: &Header, rawbytes: &[u8]) -> Result<(HDUData, usize)> {
         let mut image = HDUData::None;
 
         let bitpixval = get_keyword_int_at_index(header, 1, "BITPIX")?;
         let bitpix = Bitpix::from_i64(bitpixval)?;
         let naxis = get_keyword_int_at_index(header, 2, "NAXIS")? as usize;
         let axes = (0..naxis)
-            .map(|x| -> Result<usize, Box<dyn Error>> {
+            .map(|x| -> Result<usize> {
                 let ax = get_keyword_int_at_index(header, x + 3, &format!("NAXIS{}", x + 1))?;
                 Ok(ax as usize)
             })
-            .collect::<Result<Vec<usize>, Box<dyn std::error::Error>>>()?;
+            .collect::<Result<Vec<usize>>>()?;
 
         let mut pcount = 0;
         let mut gcount = 1;

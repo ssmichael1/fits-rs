@@ -1,8 +1,6 @@
-use std::error::Error;
-
-use crate::HeaderError;
-
 use std::rc::Rc;
+
+use anyhow::{anyhow, Result};
 
 /// The elemental types of a table column
 #[derive(Clone, Debug, PartialEq, Default)]
@@ -31,7 +29,7 @@ pub struct TForm {
     pub repeats: usize,
 }
 
-fn tform_type_from_char(c: char) -> Result<TFormType, Box<dyn Error>> {
+fn tform_type_from_char(c: char) -> Result<TFormType> {
     match c {
         'L' => Ok(TFormType::Logical),
         'X' => Ok(TFormType::Bit),
@@ -46,14 +44,14 @@ fn tform_type_from_char(c: char) -> Result<TFormType, Box<dyn Error>> {
         'M' => Ok(TFormType::Complex64),
         'P' => Ok(TFormType::ArrayD32(Rc::new(TFormType::default()), 0)),
         'Q' => Ok(TFormType::ArrayD64(Rc::new(TFormType::default()), 0)),
-        _ => Err(Box::new(HeaderError::InvalidTForm(c.to_string()))),
+        _ => Err(anyhow!("Invalid TFORM type: {}", c)),
     }
 }
 
 impl TForm {
-    pub fn from_string(s: &str) -> Result<Self, Box<dyn Error>> {
+    pub fn from_string(s: &str) -> Result<Self> {
         if s.is_empty() {
-            return Err(Box::new(HeaderError::InvalidTForm(s.to_string())));
+            return Err(anyhow!("Empty TFORM string"));
         }
         let numstr = s
             .chars()
@@ -68,7 +66,7 @@ impl TForm {
         let dtype = tform_type_from_char(
             s.chars()
                 .nth(numstr.len())
-                .ok_or(HeaderError::InvalidTForm(s.to_string()))?,
+                .ok_or(anyhow!("Invalid TFORM: {}", s))?,
         )?;
 
         if dtype == TFormType::ArrayD32(Rc::new(TFormType::default()), 0)
@@ -77,7 +75,7 @@ impl TForm {
             let tchar = s
                 .chars()
                 .nth(numstr.len())
-                .ok_or(HeaderError::InvalidTForm(s.to_string()))?;
+                .ok_or(anyhow!("Invalid TFORM: {}", s))?;
             let ttype = tform_type_from_char(tchar)?;
 
             let arrstr = s.chars().skip(numstr.len() + 1).collect::<String>();

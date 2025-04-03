@@ -2,6 +2,8 @@ use crate::HDU;
 
 use std::io::Read;
 
+use anyhow::Result;
+
 /// FITS File Structure
 ///
 /// # Description:
@@ -132,7 +134,7 @@ impl FITS {
     ///
     /// A FITS structure containing the contents of the file
     ///
-    pub fn from_file(file: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_file(file: &str) -> Result<Self> {
         let mut fits = FITS::new();
 
         // Read the file and parse the header

@@ -1,12 +1,9 @@
 use crate::HDUData;
 use crate::Header;
-use crate::HeaderError;
 use crate::KeywordValue;
 use crate::TDisp;
 
 use crate::utils::*;
-
-use std::error::Error;
 
 mod tform;
 use tform::TForm;
@@ -15,6 +12,8 @@ use tform::TFormType;
 mod tvalue;
 
 pub use tvalue::BinTableValue;
+
+use anyhow::{anyhow, Result};
 
 #[derive(Clone, Debug, Default)]
 pub struct BinTable {
@@ -37,23 +36,20 @@ pub struct BinTable {
     raw: Vec<u8>,
 }
 
-fn string_or_err(header: &Header, kw: &str) -> Result<String, Box<dyn Error>> {
+fn string_or_err(header: &Header, kw: &str) -> Result<String> {
     if let Some(kw) = header.value(kw) {
         if let KeywordValue::String(s) = kw {
             Ok(s.clone())
         } else {
-            Err(Box::new(HeaderError::UnexpectedValueType(kw.to_string())))
+            Err(anyhow!("Invalid value type for keyword {}", kw,))
         }
     } else {
-        Err(Box::new(HeaderError::MissingKeyword(kw.to_string())))
+        Err(anyhow!("Missing keyword {}", kw))
     }
 }
 
 impl BinTable {
-    pub fn from_bytes(
-        header: &Header,
-        rawbytes: &[u8],
-    ) -> Result<(HDUData, usize), Box<dyn Error>> {
+    pub fn from_bytes(header: &Header, rawbytes: &[u8]) -> Result<(HDUData, usize)> {
         let mut bintable = Box::new(BinTable::default());
 
         // Go through required keywords, per the standard
@@ -135,10 +131,11 @@ impl BinTable {
 
         // Make sure enough bytes are available
         if rawbytes.len() < nbytes {
-            return Err(Box::new(crate::FITSError::InvalidDataSize(
+            return Err(anyhow!(
+                "Not enough bytes in rawbytes.  Expected {} but got {}",
                 nbytes,
-                rawbytes.len(),
-            )));
+                rawbytes.len()
+            ));
         }
         // Copy raw bytes into the table value
         bintable.raw = rawbytes[..nbytes].to_vec();
@@ -146,12 +143,20 @@ impl BinTable {
         Ok((HDUData::BinTable(bintable), nbytes))
     }
 
-    pub fn at(&self, row: usize, col: usize) -> Result<BinTableValue, Box<dyn Error>> {
+    pub fn at(&self, row: usize, col: usize) -> Result<BinTableValue> {
         if row >= self.nrows {
-            return Err(Box::new(crate::FITSError::InvalidRow(row, self.nrows)));
+            return Err(anyhow!(
+                "Invalid row {}.  Must be less than {}",
+                row,
+                self.nrows
+            ));
         }
         if col >= self.ncols {
-            return Err(Box::new(crate::FITSError::InvalidColumn(col, self.ncols)));
+            return Err(anyhow!(
+                "Invalid column {}.  Must be less than {}",
+                col,
+                self.ncols
+            ));
         }
         let offset = self.rowbytes * row + (0..col).fold(0, |acc, i| acc + self.tform[i].bytes());
         let tform = &self.tform[col];
@@ -343,9 +348,7 @@ impl BinTable {
                 }
             }
             _ => {
-                return Err(Box::new(crate::FITSError::GenericError(
-                    "Array Types Not Yet Implemented".to_string(),
-                )))
+                return Err(anyhow!("Array type not yet implemented"));
             }
         };
         Ok(value)

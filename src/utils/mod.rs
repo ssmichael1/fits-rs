@@ -1,28 +1,28 @@
 use crate::Header;
-use crate::HeaderError;
 use crate::KeywordValue;
 
-use std::error::Error;
+use anyhow::{anyhow, Result};
 
-pub fn get_keyword_int_at_index(
-    header: &Header,
-    index: usize,
-    name: &str,
-) -> Result<i64, Box<dyn Error>> {
+pub fn get_keyword_int_at_index(header: &Header, index: usize, name: &str) -> Result<i64> {
     if let Some(kw) = header.get(index) {
         if kw.name != name {
-            return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                format!("{} not {}", kw.name.clone(), name),
-                index,
-            )));
+            return Err(anyhow!(
+                "Invalid keyword placement: expected \"{}\", got \"{}\"",
+                name,
+                kw.name.clone()
+            ));
         }
         if let KeywordValue::Int(v) = &kw.value {
             Ok(*v)
         } else {
-            Err(Box::new(HeaderError::UnexpectedValueType(kw.name.clone())))
+            Err(anyhow!(
+                "Invalid value type for keyword {}: expected Int, got {:?}",
+                name,
+                kw.value
+            ))
         }
     } else {
-        Err(Box::new(HeaderError::MissingKeyword(name.to_string())))
+        Err(anyhow!("Missing keyword {} at index {}", name, index))
     }
 }
 
@@ -31,26 +31,33 @@ pub fn check_int_keyword_at_index(
     index: usize,
     name: &str,
     value: i64,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<()> {
     if let Some(kw) = header.get(index) {
         if kw.name != name {
-            return Err(Box::new(HeaderError::InvalidKeywordPlacement(
-                format!("{} not {}", kw.name.clone(), name),
-                index,
-            )));
+            return Err(anyhow!(
+                "Invalid keyword placement: expected \"{}\", got \"{}\"",
+                name,
+                kw.name.clone()
+            ));
         }
         if let KeywordValue::Int(v) = &kw.value {
             if *v != value {
-                return Err(Box::new(HeaderError::GenericError(format!(
-                    "Invalid value for keyword {}",
-                    name
-                ))));
+                return Err(anyhow!(
+                    "Invaild value for keyword {}: expected {}, got {}",
+                    name,
+                    value,
+                    v
+                ));
             }
         } else {
-            return Err(Box::new(HeaderError::UnexpectedValueType(kw.name.clone())));
+            return Err(anyhow!(
+                "Invalid value type for keyword {}: expected Int, got {:?}",
+                name,
+                kw.value
+            ));
         }
         Ok(())
     } else {
-        Err(Box::new(HeaderError::MissingKeyword(name.to_string())))
+        Err(anyhow!("Missing keyword {} at index {}", name, index))
     }
 }

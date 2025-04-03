@@ -1,8 +1,7 @@
-use crate::errors::HeaderError;
 use crate::Keyword;
 use crate::KeywordValue;
 
-use std::error::Error;
+use anyhow::{anyhow, Context, Result};
 
 #[derive(Clone, Debug)]
 pub enum TDisp {
@@ -18,11 +17,9 @@ pub enum TDisp {
     FloatExp(usize, usize, usize),
 }
 
-fn wmfromstr(s: &str) -> Result<(usize, usize), Box<dyn Error>> {
+fn wmfromstr(s: &str) -> Result<(usize, usize)> {
     let mut iter = s.split('.');
-    let w = iter
-        .next()
-        .ok_or_else(|| Box::new(HeaderError::GenericError("Invalid TDISP value".to_string())))?;
+    let w = iter.next().context("Invalid TDISP value")?;
     let m = {
         if let Some(mstr) = iter.next() {
             mstr.parse::<usize>()?
@@ -33,19 +30,15 @@ fn wmfromstr(s: &str) -> Result<(usize, usize), Box<dyn Error>> {
     Ok((w.parse()?, m))
 }
 
-fn wdefromstr(s: &str) -> Result<(usize, usize, usize), Box<dyn Error>> {
+fn wdefromstr(s: &str) -> Result<(usize, usize, usize)> {
     let mut iter = s.split('.');
-    let w = iter
-        .next()
-        .ok_or_else(|| Box::new(HeaderError::GenericError("Invalid TDISP value".to_string())))?;
+    let w = iter.next().context("Invalid TDISP value")?;
     let w: usize = w.parse()?;
     let mut d: usize = 0;
     let mut e: usize = 0;
     if let Some(dstr) = iter.next() {
         let mut iter2 = dstr.split('E');
-        let dstr = iter2.next().ok_or_else(|| {
-            Box::new(HeaderError::GenericError("Invalid TDISP value".to_string()))
-        })?;
+        let dstr = iter2.next().context("Invalid TDISP value")?;
         d = dstr.parse::<usize>()?;
         if let Some(estr) = iter2.next() {
             e = estr.parse::<usize>()?;
@@ -57,20 +50,13 @@ fn wdefromstr(s: &str) -> Result<(usize, usize, usize), Box<dyn Error>> {
 impl TDisp {
     /// Parse a TDISP keyword
     /// See Table 16 of the FITS Standard
-    pub fn from_keyword(kw: &Keyword) -> Result<TDisp, Box<dyn Error>> {
+    pub fn from_keyword(kw: &Keyword) -> Result<TDisp> {
         if let KeywordValue::String(value) = &kw.value {
-            let disp = value
-                .chars()
-                .next()
-                .ok_or(HeaderError::GenericError("Invalid TDISP value".to_string()))?;
+            let disp = value.chars().next().context("Invalid TDISP value")?;
             let fstr = value.chars().skip(1).collect::<String>();
             match disp {
-                'A' => Ok(TDisp::Char(fstr.parse().map_err(|_| {
-                    Box::new(HeaderError::GenericError("Invalid TDISP value".to_string()))
-                })?)),
-                'L' => Ok(TDisp::Logical(fstr.parse().map_err(|_| {
-                    Box::new(HeaderError::GenericError("Invalid TDISP value".to_string()))
-                })?)),
+                'A' => Ok(TDisp::Char(fstr.parse().context("Invalid TDISP value")?)),
+                'L' => Ok(TDisp::Logical(fstr.parse().context("Invalid TDISP value")?)),
                 'I' => {
                     let (w, m) = wmfromstr(&fstr)?;
                     Ok(TDisp::Int(w, m))
@@ -109,14 +95,13 @@ impl TDisp {
                         Ok(TDisp::FloatExp(w, d, e))
                     }
                 }
-                _ => Err(Box::new(HeaderError::GenericError(
-                    "Invalid TDISP value".to_string(),
-                ))),
+                _ => Err(anyhow!("Invalid TDISP value: {}", value)),
             }
         } else {
-            Err(Box::new(HeaderError::GenericError(
-                "Invalid TDISP value".to_string(),
-            )))
+            Err(anyhow!(
+                "Invalid TDISP value: expected String, got {:?}",
+                kw.value
+            ))
         }
     }
 }
