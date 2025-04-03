@@ -108,10 +108,28 @@ impl HDU {
                                 // read in the table
                                 let (bintable, nbytes) =
                                     BinTable::from_bytes(&record.header, &rawbytes[offset..])?;
-                                record.data = bintable;
+
+                                // See if the binary table contains a compressed image
+                                let is_compressed_image = {
+                                    if let Some(zimage) = record.header.find("ZIMAGE") {
+                                        zimage.get_bool()?
+                                    } else {
+                                        false
+                                    }
+                                };
+
+                                if !is_compressed_image {
+                                    record.data = bintable;
+                                } else {
+                                    record.data = HDUData::Image(Box::new(
+                                        crate::compression::bintable2image(
+                                            &record.header,
+                                            &bintable,
+                                        )?,
+                                    ));
+                                }
                                 offset += nbytes;
                             }
-
                             _ => {
                                 // Unsupported extension ; report error
                                 return Err(anyhow!("Unsupported extension: {}", value));

@@ -79,6 +79,7 @@
 //!
 
 mod bintable;
+mod compression;
 mod fits;
 mod hdu;
 mod header;

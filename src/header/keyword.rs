@@ -292,4 +292,76 @@ impl Keyword {
 
         Ok(kw)
     }
+
+    /// Get the keyword value as a boolean,
+    /// if the keyword value is not a boolean,
+    /// return an error
+    ///
+    pub fn get_bool(&self) -> Result<bool> {
+        if let KeywordValue::Bool(b) = &self.value {
+            Ok(*b)
+        } else {
+            Err(anyhow!("Invalid keyword value type: expected Bool"))
+        }
+    }
+
+    /// Get the keyword value as a string,
+    /// if the keyword value is not a string,
+    /// return an error
+    ///
+    pub fn get_string(&self) -> Result<String> {
+        if let KeywordValue::String(s) = &self.value {
+            Ok(s.clone())
+        } else {
+            Err(anyhow!("Invalid keyword value type: expected String"))
+        }
+    }
+
+    /// Get the keyword value as an integer,
+    /// if the keyword value is not an integer,
+    /// return an error
+    ///
+    pub fn get_int(&self) -> Result<i64> {
+        if let KeywordValue::Int(i) = &self.value {
+            Ok(*i)
+        } else {
+            Err(anyhow!("Invalid keyword value type: expected Int"))
+        }
+    }
+
+    /// Get the keyword value as a float,
+    /// if the keyword value is not a float,
+    /// return an error
+    ///
+    pub fn get_float(&self) -> Result<f64> {
+        if let KeywordValue::Float(f) = &self.value {
+            Ok(*f)
+        } else {
+            Err(anyhow!("Invalid keyword value type: expected Float"))
+        }
+    }
+
+    /// Get the keyword value as a complex integer,
+    /// if the keyword value is not a complex integer,
+    /// return an error
+    ///
+    pub fn get_complex_int(&self) -> Result<(i64, i64)> {
+        if let KeywordValue::ComplexInt(r, i) = &self.value {
+            Ok((*r, *i))
+        } else {
+            Err(anyhow!("Invalid keyword value type: expected ComplexInt"))
+        }
+    }
+
+    /// Get the keyword value as a complex float,
+    /// if the keyword value is not a complex float,
+    /// return an error
+    ///
+    pub fn get_complex_float(&self) -> Result<(f64, f64)> {
+        if let KeywordValue::ComplexFloat(r, i) = &self.value {
+            Ok((*r, *i))
+        } else {
+            Err(anyhow!("Invalid keyword value type: expected ComplexFloat"))
+        }
+    }
 }

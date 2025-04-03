@@ -1,3 +1,9 @@
+//!
+//! # bintable
+//!
+//! Module for handling FITS binary tables.
+//!
+
 use crate::HDUData;
 use crate::Header;
 use crate::KeywordValue;
@@ -132,7 +138,7 @@ impl BinTable {
         // Make sure enough bytes are available
         if rawbytes.len() < nbytes {
             return Err(anyhow!(
-                "Not enough bytes in rawbytes.  Expected {} but got {}",
+                "Not enough bytes available for table.  Expected {} but got {}",
                 nbytes,
                 rawbytes.len()
             ));

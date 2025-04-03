@@ -2,7 +2,7 @@ use crate::HDU;
 
 use std::io::Read;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 /// FITS File Structure
 ///
@@ -134,20 +134,23 @@ impl FITS {
     ///
     /// A FITS structure containing the contents of the file
     ///
-    pub fn from_file(file: &str) -> Result<Self> {
+    pub fn from_file(filename: &str) -> Result<Self> {
         let mut fits = FITS::new();
 
         // Read the file and parse the header
         // Create a stream for the file
-        let mut file = std::fs::File::open(file)?;
+        let mut file = std::fs::File::open(filename)
+            .context(format!("Error opening FITS file: {}", filename))?;
         let mut rawbytes = Vec::new();
-        file.read_to_end(&mut rawbytes)?;
+        file.read_to_end(&mut rawbytes)
+            .context(format!("Error reading FITS file: {}", filename))?;
 
         // The FITS file is a concatenation of
         // Header and Data units.  Read them in sequentially
         let mut offset = 0;
         while offset < rawbytes.len() {
-            let (hdu, nbytes) = HDU::from_bytes(&rawbytes[offset..])?;
+            let (hdu, nbytes) = HDU::from_bytes(&rawbytes[offset..])
+                .context(format!("Error reading FITS file: {}", filename))?;
             fits.hdus.push(hdu);
             offset += nbytes;
         }
