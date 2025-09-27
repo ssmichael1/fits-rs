@@ -127,14 +127,14 @@ impl Image {
                     .to_vec()
                 }
             };
-            image = HDUData::Image(Box::new(Image {
+            image = HDUData::Image(Image {
                 pixeltype: bitpix,
                 axes,
                 rawbytes: imgrawbytes,
                 wcs: crate::WCS::from_header(header)?,
                 gcount,
                 pcount,
-            }))
+            })
         }
 
         Ok((image, nbytes))

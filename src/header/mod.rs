@@ -41,7 +41,7 @@ impl std::fmt::Display for Header {
 
 impl Header {
     // Iterator to the keywords
-    pub fn iter(&self) -> std::slice::Iter<Keyword> {
+    pub fn iter(&'_ self) -> std::slice::Iter<'_, Keyword> {
         self.0.iter()
     }
 

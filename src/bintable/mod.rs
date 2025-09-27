@@ -56,7 +56,7 @@ fn string_or_err(header: &Header, kw: &str) -> Result<String> {
 
 impl BinTable {
     pub fn from_bytes(header: &Header, rawbytes: &[u8]) -> Result<(HDUData, usize)> {
-        let mut bintable = Box::new(BinTable::default());
+        let mut bintable = BinTable::default();
 
         // Go through required keywords, per the standard
         // After XTENSION is BITPIX, which must be 8
@@ -184,7 +184,7 @@ impl BinTable {
                     BinTableValue::Bit(self.raw[offset] != 0)
                 } else {
                     let mut v = Vec::with_capacity(tform.repeats);
-                    let nbytes = (tform.repeats + 7) / 8;
+                    let nbytes = tform.repeats.div_ceil(8);
                     for i in 0..nbytes {
                         let byte = self.raw[offset + i];
                         for j in 0..8 {

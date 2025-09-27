@@ -1,4 +1,3 @@
-use crate::bintable::BinTable;
 use crate::header::Header;
 use crate::image::Image;
 use crate::Bitpix;
@@ -42,19 +41,19 @@ impl TryFrom<String> for CompressionType {
 /// FITS file compression is implemented in a shitty shitty way ... why would
 /// anyone ever do this?!
 ///
-pub fn bintable2image(header: &Header, bintable: &HDUData) -> Result<Image> {
+pub fn bintable2image(header: &Header, _bintable: &HDUData) -> Result<Image> {
     // Mandatory CMPTYPE keyword
     // Section 10.1.1 of standard
     let cmptype = header
         .find("CMPTYPE")
         .ok_or_else(|| anyhow!("Missing CMPTYPE keyword"))?
         .get_string()?;
-    let compression_type = CompressionType::try_from(cmptype)?;
+    let _compression_type = CompressionType::try_from(cmptype)?;
     let zbitpix = header
         .find("ZBITPIX")
         .ok_or_else(|| anyhow!("Missing ZBITPIX keyword"))?
         .get_int()?;
-    let bitpix = Bitpix::from_i64(zbitpix)?;
+    let _bitpix = Bitpix::from_i64(zbitpix)?;
     let naxis = header
         .find("ZNAXIS")
         .ok_or_else(|| anyhow!("Missing ZNAXIS keyword"))?

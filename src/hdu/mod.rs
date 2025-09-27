@@ -121,12 +121,11 @@ impl HDU {
                                 if !is_compressed_image {
                                     record.data = bintable;
                                 } else {
-                                    record.data = HDUData::Image(Box::new(
-                                        crate::compression::bintable2image(
+                                    record.data =
+                                        HDUData::Image(crate::compression::bintable2image(
                                             &record.header,
                                             &bintable,
-                                        )?,
-                                    ));
+                                        )?);
                                 }
                                 offset += nbytes;
                             }

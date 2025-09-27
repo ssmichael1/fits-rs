@@ -114,7 +114,7 @@ impl Table {
         // Note: this is an objectively awful way to store a table
         // but it is the standard
 
-        let mut table = Box::new(Table::default());
+        let mut table = Table::default();
         // Go through required keywords, per the standard
         // After XTENSION is BITPIX, which must be 8
         check_int_keyword_at_index(header, 1, "BITPIX", 8)?;

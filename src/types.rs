@@ -3,9 +3,9 @@ use anyhow::{anyhow, Result};
 #[derive(Debug, Clone)]
 pub enum HDUData {
     None,
-    Table(Box<crate::Table>),
-    Image(Box<crate::Image>),
-    BinTable(Box<crate::BinTable>),
+    Table(crate::Table),
+    Image(crate::Image),
+    BinTable(crate::BinTable),
 }
 
 #[derive(Debug, Clone)]
